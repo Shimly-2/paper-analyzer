@@ -33,13 +33,11 @@
             overflow: hidden;
         }
 
-        /* 桌面三栏布局 */
         .container {
             display: flex;
             height: 100vh;
         }
 
-        /* 左侧栏 - 论文库 */
         .sidebar-left {
             width: 280px;
             background: var(--bg-secondary);
@@ -165,7 +163,6 @@
             color: var(--text-secondary);
         }
 
-        /* 中间栏 - 分析报告 */
         .main-content {
             flex: 1;
             display: flex;
@@ -296,7 +293,6 @@
             padding-left: 24px;
         }
 
-        /* 右侧栏 - 对话 */
         .sidebar-right {
             width: 320px;
             background: var(--bg-secondary);
@@ -404,7 +400,6 @@
             opacity: 0.9;
         }
 
-        /* 移动端底部导航 */
         .mobile-nav {
             display: none;
             position: fixed;
@@ -440,7 +435,6 @@
             margin-bottom: 4px;
         }
 
-        /* 响应式 */
         @media (max-width: 1024px) {
             .sidebar-right {
                 display: none;
@@ -472,7 +466,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- 左侧栏 -->
         <aside class="sidebar-left">
             <div class="sidebar-header">
                 <h2 class="sidebar-title">论文库</h2>
@@ -517,25 +510,9 @@
                         <span class="paper-tag">Agent</span>
                     </div>
                 </div>
-                <div class="paper-item">
-                    <div class="paper-title">CodeRAG: Retrieval-Augmented Generation for Code</div>
-                    <div class="paper-meta">arxiv:2501.12345 • 2025-01-20</div>
-                    <div class="paper-tags">
-                        <span class="paper-tag">Agent</span>
-                    </div>
-                </div>
-                <div class="paper-item">
-                    <div class="paper-title">LongVA: Long Video Understanding</div>
-                    <div class="paper-meta">arxiv:2502.08090 • 2025-02-12</div>
-                    <div class="paper-tags">
-                        <span class="paper-tag">长文本</span>
-                        <span class="paper-tag">多模态</span>
-                    </div>
-                </div>
             </div>
         </aside>
 
-        <!-- 中间栏 -->
         <main class="main-content">
             <header class="main-header">
                 <h1 class="main-title">Envisioning Beyond the Pixels: Benchmarking Reasoning-Informed Visual Editing</h1>
@@ -611,7 +588,6 @@
             </div>
         </main>
 
-        <!-- 右侧栏 -->
         <aside class="sidebar-right">
             <div class="chat-header">
                 <h3 class="chat-title">与 Agent 对话</h3>
@@ -636,7 +612,6 @@
         </aside>
     </div>
 
-    <!-- 移动端导航 -->
     <nav class="mobile-nav">
         <div class="mobile-nav-items">
             <div class="mobile-nav-item active">
@@ -659,7 +634,6 @@
     </nav>
 
     <script>
-        // 简单的交互效果
         document.querySelectorAll('.paper-item').forEach(item => {
             item.addEventListener('click', function() {
                 document.querySelectorAll('.paper-item').forEach(p => p.classList.remove('active'));
