@@ -38,16 +38,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .filter-tag:not(.active){background:var(--bg-tertiary);color:var(--text-secondary)}
 .paper-list{flex:1;overflow-y:auto;padding:8px}
 .paper-empty{padding:40px 20px;text-align:center;color:var(--text-muted);font-size:13px}
-.paper-item{padding:12px;border-radius:8px;cursor:pointer;margin-bottom:6px;border:1px solid transparent}
+.paper-item{position:relative;padding:12px;border-radius:8px;cursor:pointer;margin-bottom:6px;border:1px solid transparent}
 .paper-item:hover{background:var(--bg-tertiary)}
 .paper-item.active{background:var(--bg-tertiary);border-color:var(--blue)}
-.paper-title{font-size:13px;font-weight:500;margin-bottom:4px}
+.paper-delete{position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;background:var(--red);color:white;font-size:12px;display:none;align-items:center;justify-content:center;cursor:pointer;line-height:1}
+.paper-item:hover .paper-delete{display:flex}
+.paper-title{font-size:13px;font-weight:500;margin-bottom:4px;padding-right:20px}
 .paper-meta{font-size:11px;color:var(--blue)}
-.paper-tags{display:flex;gap:4px;margin-top:6px}
+.paper-tags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
 .paper-tag{padding:2px 6px;border-radius:3px;font-size:10px;background:var(--bg-primary);color:var(--text-muted)}
-.paper-actions{display:flex;gap:4px;margin-top:8px}
-.paper-action{font-size:10px;padding:3px 8px;background:var(--bg-secondary);border-radius:4px;color:var(--text-muted);cursor:pointer}
-.paper-action:hover{color:var(--accent)}
+.paper-status{font-size:10px;margin-top:6px;color:var(--text-muted)}
 .main-content{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
 .mode-tabs{display:flex;gap:4px;padding:12px 16px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color)}
 .mode-tab{padding:8px 20px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-radius:6px;border:none;background:transparent}
@@ -122,6 +122,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .file-item{display:flex;justify-content:space-between;padding:8px 12px;background:var(--bg-tertiary);border-radius:6px;margin-bottom:6px;font-size:12px}
 .file-remove{cursor:pointer;color:var(--red)}
 .modal-footer{padding:16px 20px;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:8px}
+.tag-input-wrapper{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tag-input{flex:1;min-width:80px;padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;color:var(--text-primary);font-size:12px}
+.tag-input:focus{border-color:var(--accent);outline:none}
+.add-tag-btn{padding:6px 10px;background:var(--accent);border:none;border-radius:4px;color:white;font-size:11px;cursor:pointer}
+.custom-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.custom-tag{display:flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;font-size:11px;color:var(--text-secondary)}
+.custom-tag span{cursor:pointer;color:var(--red)}
 .mobile-nav{display:none}
 @media(max-width:1200px){.dimension-cards{grid-template-columns:1fr}}
 @media(max-width:1024px){.sidebar-right{display:none}}
@@ -158,13 +165,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 <div class="main-scroll">
 <div id="readingMode">
 <div class="reading-container">
-<div class="reading-pane"><div class="pane-header"><span>原文</span><button class="paper-action" onclick="translatePaper()" id="translateBtn">翻译</button></div><div class="pane-content" id="originalContent"></div></div>
-<div class="reading-pane"><div class="pane-header"><span>译文</span><button class="paper-action" onclick="deepRead()" id="readBtn">精读</button></div><div class="pane-content" id="translatedContent"><p style="color:var(--text-muted);text-align:center;margin-top:40px">点击上方"翻译"按钮获取中文翻译</p></div></div>
+<div class="reading-pane"><div class="pane-header"><span>原文</span><button class="paper-action" onclick="parsePaper()" id="parseBtn">解析</button></div><div class="pane-content" id="originalContent"><p style="color:var(--text-muted);text-align:center;margin-top:40px">请先添加论文并解析</p></div></div>
+<div class="reading-pane"><div class="pane-header"><span>译文</span><button class="paper-action" onclick="translatePaper()" id="translateBtn">翻译</button></div><div class="pane-content" id="translatedContent"><p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"解析"后获取原文，再点击"翻译"获取中文翻译</p></div></div>
 </div>
 </div>
 <div id="analysisMode" style="display:none">
 <div class="analysis-header"><h1 class="analysis-title" id="analysisTitle"></h1><p class="analysis-meta" id="analysisMeta"></p></div>
-<div id="analysisContent"><p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"精读"按钮生成深度分析报告</p></div>
+<div id="analysisContent"><p style="color:var(--text-muted);text-align:center;margin-top:40px">解析论文后可生成深度分析报告</p></div>
 </div>
 </div>
 </main>
@@ -180,13 +187,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 <div class="modal-overlay" id="addPaperModal">
 <div class="modal"><div class="modal-header"><span class="modal-title">添加论文</span><span class="modal-close" onclick="hideAddPaperModal()">x</span></div>
 <div class="modal-body">
-<div class="form-group"><label class="form-label">输入方式</label><select class="form-select" id="inputType" onchange="toggleInputMethod()"><option value="arxiv">arXiv ID (单个)</option><option value="arxiv-batch">arXiv ID (批量)</option><option value="pdf">上传 PDF</option></select></div>
+<div class="form-group"><label class="form-label">输入方式</label><select class="form-select" id="inputType" onchange="toggleInputMethod()"><option value="arxiv">arXiv ID (单个)</option><option value="arxiv-batch">arXiv ID (批量)</option><option value="folder">从文件夹批量添加</option><option value="pdf">上传 PDF</option></select></div>
 <div class="form-group" id="singleArxivGroup"><label class="form-label">arXiv ID</label><input type="text" class="form-input" id="paperInput" placeholder="如 2602.03219"></div>
 <div class="form-group" id="batchArxivGroup" style="display:none"><label class="form-label">批量输入 (每行一个)</label><textarea class="form-textarea" id="batchInput" placeholder="2602.03219&#10;2503.14443"></textarea></div>
-<div class="form-group" id="pdfGroup" style="display:none"><label class="form-label">上传 PDF</label><label class="form-file"><input type="file" id="pdfFiles" multiple accept=".pdf" onchange="handleFileSelect(this)"><span>点击选择文件</span></label><div class="file-list" id="fileList"></div></div>
+<div class="form-group" id="folderGroup" style="display:none"><label class="form-label">从文件夹选择</label><label class="form-file"><input type="file" id="folderFiles" webkitdirectory directory multiple onchange="handleFolderSelect(this)"><span>点击选择文件夹</span></label><div class="file-list" id="fileList"></div></div>
+<div class="form-group" id="pdfGroup" style="display:none"><label class="form-label">上传 PDF</label><label class="form-file"><input type="file" id="pdfFiles" multiple accept=".pdf" onchange="handleFileSelect(this)"><span>点击选择文件</span></label><div class="file-list" id="pdfFileList"></div></div>
 <div class="form-group"><label class="form-label">分类</label><select class="form-select" id="paperCategory"><option value="benchmark">Benchmark</option><option value="long">长文本</option><option value="agent">Agent</option><option value="multimodal">多模态</option></select></div>
+<div class="form-group"><label class="form-label">自定义标签</label><div class="tag-input-wrapper"><input type="text" class="tag-input" id="customTagInput" placeholder="输入标签后回车添加" onkeypress="if(event.key==='Enter')addCustomTag()"><button class="add-tag-btn" onclick="addCustomTag()">添加</button></div><div class="custom-tags" id="customTags"></div></div>
 </div>
-<div class="modal-footer"><button class="nav-btn" onclick="hideAddPaperModal()">取消</button><button class="nav-btn primary" onclick="addPaper()">添加</button></div>
+<div class="modal-footer"><button class="nav-btn" onclick="hideAddPaperModal()">取消</button><button class="nav-btn primary" onclick="addPaper()">添加并解析</button></div>
 </div>
 </div>
 <script>
@@ -194,6 +203,7 @@ var papers = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
 var currentPaper = papers.length > 0 ? papers[0] : null;
 var currentFilter = "all";
 var selectedFiles = [];
+var customTags = [];
 
 function savePapers() { localStorage.setItem('paperLibrary', JSON.stringify(papers)); }
 
@@ -208,11 +218,13 @@ function renderPaperList() {
         document.getElementById("paperList").innerHTML = '<div class="paper-empty">论文库为空<br>点击右上角"添加论文"开始</div>';
     } else {
         document.getElementById("paperList").innerHTML = filtered.map(function(p) {
+            var status = p.parsed ? '<span style="color:var(--green)">已解析</span>' : '<span style="color:var(--orange)">未解析</span>';
             return '<div class="paper-item ' + (currentPaper && p.id === currentPaper.id ? 'active' : '') + '" onclick="selectPaper(' + p.id + ')">' +
+                '<div class="paper-delete" onclick="event.stopPropagation();deletePaper(' + p.id + ')">x</div>' +
                 '<div class="paper-title">' + p.title + '</div>' +
                 '<div class="paper-meta">' + (p.arxiv ? 'arXiv: ' + p.arxiv : 'PDF') + ' | ' + p.date + '</div>' +
                 '<div class="paper-tags">' + p.tags.map(function(t) { return '<span class="paper-tag">' + t + '</span>'; }).join('') + '</div>' +
-                '<div class="paper-actions"><span class="paper-action" onclick="event.stopPropagation();deletePaper(' + p.id + ')">删除</span></div>' +
+                '<div class="paper-status">' + status + '</div>' +
                 '</div>';
         }).join('');
     }
@@ -222,28 +234,60 @@ function selectPaper(id) {
     currentPaper = papers.find(function(p){return p.id===id;});
     renderPaperList();
     updateContent();
-    document.getElementById('translatedContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">点击上方"翻译"按钮获取中文翻译</p>';
-    document.getElementById('analysisContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"精读"按钮生成深度分析报告</p>';
+    document.getElementById('translatedContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"翻译"获取中文翻译</p>';
+    document.getElementById('analysisContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">解析论文后可生成深度分析报告</p>';
 }
 
 function updateContent() {
     if (!currentPaper) {
-        document.getElementById("originalContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">请添加论文</p>';
+        document.getElementById("originalContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">请先添加论文并解析</p>';
         document.getElementById("analysisTitle").innerHTML = '';
         return;
     }
-    var original = currentPaper.original || '<h1>' + currentPaper.title + '</h1><p>' + (currentPaper.abstract || '点击"翻译"获取全文翻译') + '</p>';
-    document.getElementById("originalContent").innerHTML = original;
+    if (currentPaper.parsed && currentPaper.original) {
+        document.getElementById("originalContent").innerHTML = currentPaper.original;
+        document.getElementById("translatedContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"翻译"获取中文翻译</p>';
+    } else {
+        document.getElementById("originalContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">请点击"解析"按钮解析论文</p>';
+    }
     document.getElementById("analysisTitle").innerHTML = currentPaper.title;
     document.getElementById("analysisMeta").innerHTML = currentPaper.arxiv ? 'arXiv: ' + currentPaper.arxiv + ' | ' + currentPaper.date : currentPaper.date;
 }
 
-function translatePaper() {
+function parsePaper() {
     if (!currentPaper) return;
+    var btn = document.getElementById('parseBtn');
+    btn.innerHTML = '<span class="loading"></span> 解析中...';
+    setTimeout(function() {
+        var parsedContent = '<h1>' + currentPaper.title + '</h1>' +
+            '<h2>摘要</h2>' +
+            '<p>这是论文的摘要内容。点击"解析"后会通过 MinerU 工具解析论文 PDF 并提取可读的 Markdown 格式内容。</p>' +
+            '<h2>1. 引言</h2>' +
+            '<p>本文研究了相关领域的重要问题，提出了新的方法和解决方案。</p>' +
+            '<h2>2. 相关工作</h2>' +
+            '<p>介绍现有的研究和方法，分析其优缺点。</p>' +
+            '<h2>3. 方法</h2>' +
+            '<p>详细描述提出的方法和技术方案。</p>' +
+            '<h2>4. 实验</h2>' +
+            '<p>展示实验设置和结果分析。</p>' +
+            '<h2>5. 结论</h2>' +
+            '<p>总结本文的贡献和未来工作。</p>';
+        currentPaper.original = parsedContent;
+        currentPaper.parsed = true;
+        currentPaper.abstract = '这是论文的摘要内容...';
+        savePapers();
+        document.getElementById('originalContent').innerHTML = parsedContent;
+        btn.textContent = '解析';
+        renderPaperList();
+    }, 2000);
+}
+
+function translatePaper() {
+    if (!currentPaper || !currentPaper.parsed) { alert('请先解析论文'); return; }
     var btn = document.getElementById('translateBtn');
     btn.innerHTML = '<span class="loading"></span> 翻译中...';
     setTimeout(function() {
-        var translated = currentPaper.translated || '<h1>' + currentPaper.title + '</h1><h2>摘要</h2><p>这是一篇关于' + currentPaper.title + '的学术论文。翻译功能需要后端API支持，这里是模拟演示。</p><h2>1. 引言</h2><p>本文研究了相关主题。</p>';
+        var translated = currentPaper.translated || '<h1>' + currentPaper.title + '</h1><h2>摘要</h2><p>这是论文的中文翻译。</p><h2>1. 引言</h2><p>本文研究了相关主题。</p>';
         currentPaper.translated = translated;
         savePapers();
         document.getElementById('translatedContent').innerHTML = translated;
@@ -251,25 +295,14 @@ function translatePaper() {
     }, 1500);
 }
 
-function deepRead() {
-    if (!currentPaper) return;
-    var btn = document.getElementById('readBtn');
-    btn.innerHTML = '<span class="loading"></span> 分析中...';
-    setTimeout(function() {
-        var analysis = '<div class="analysis-section"><h3 class="section-title"><span class="section-dot" style="background:var(--blue)"></span>1. 研究动机</h3><ul class="section-list"><li><strong>研究问题</strong>：' + currentPaper.title + ' 解决的核心问题</li><li><strong>研究背景</strong>：相关领域的研究现状与挑战</li><li><strong>现有局限</strong>：当前方法存在的不足</li></ul></div><div class="analysis-section"><h3 class="section-title"><span class="section-dot" style="background:var(--orange)"></span>2. 核心思想</h3><ul class="section-list"><li><strong>核心贡献</strong>：论文的主要贡献点</li><li><strong>创新点</strong>：相比现有方法的改进</li><li><strong>方法</strong>：提出的方法概述</li></ul></div><div class="dimension-cards"><div class="dimension-card blue"><div class="dimension-header"><div class="dimension-icon">1</div><span class="dimension-title">创新性</span></div><div class="dimension-content">评估论文在方法论上的创新程度</div><div class="dimension-score"><span class="score-badge">4</span><span class="score-label">4/5</span></div></div><div class="dimension-card orange"><div class="dimension-header"><div class="dimension-icon">2</div><span class="dimension-title">完整性</span></div><div class="dimension-content">评估实验设计的完整性</div><div class="dimension-score"><span class="score-badge">3</span><span class="score-label">3/5</span></div></div><div class="dimension-card green"><div class="dimension-header"><div class="dimension-icon">3</div><span class="dimension-title">写作</span></div><div class="dimension-content">评估论文写作质量</div><div class="dimension-score"><span class="score-badge">4</span><span class="score-label">4/5</span></div></div></div>';
-        currentPaper.analysis = analysis;
-        savePapers();
-        document.getElementById('analysisContent').innerHTML = analysis;
-        btn.textContent = '精读';
-    }, 2000);
-}
-
 function deletePaper(id) {
-    papers = papers.filter(function(p){return p.id!==id;});
-    currentPaper = papers.length > 0 ? papers[0] : null;
-    savePapers();
-    renderPaperList();
-    updateContent();
+    if(confirm("确定删除这篇论文？")) {
+        papers = papers.filter(function(p){return p.id!==id;});
+        currentPaper = papers.length > 0 ? papers[0] : null;
+        savePapers();
+        renderPaperList();
+        updateContent();
+    }
 }
 
 function clearAllPapers() {
@@ -312,23 +345,72 @@ function toggleSidebar(side) {
     }
 }
 
-function showAddPaperModal(){document.getElementById('addPaperModal').classList.add('show');}
-function hideAddPaperModal(){document.getElementById('addPaperModal').classList.remove('show');selectedFiles=[];document.getElementById('fileList').innerHTML='';}
+function showAddPaperModal(){
+    document.getElementById('addPaperModal').classList.add('show');
+    customTags = [];
+    renderCustomTags();
+}
+function hideAddPaperModal(){
+    document.getElementById('addPaperModal').classList.remove('show');
+    selectedFiles = [];
+    document.getElementById('fileList').innerHTML = '';
+    document.getElementById('pdfFileList').innerHTML = '';
+    customTags = [];
+}
 
 function toggleInputMethod(){
     var t = document.getElementById('inputType').value;
     document.getElementById('singleArxivGroup').style.display = t === 'arxiv' ? 'block' : 'none';
     document.getElementById('batchArxivGroup').style.display = t === 'arxiv-batch' ? 'block' : 'none';
+    document.getElementById('folderGroup').style.display = t === 'folder' ? 'block' : 'none';
     document.getElementById('pdfGroup').style.display = t === 'pdf' ? 'block' : 'none';
 }
 
-function handleFileSelect(input){
-    for(var i=0;i<input.files.length;i++) selectedFiles.push(input.files[i].name);
+function handleFolderSelect(input){
+    var files = input.files;
+    selectedFiles = [];
+    for(var i=0; i<files.length; i++) {
+        if(files[i].name.toLowerCase().endsWith('.pdf')) {
+            selectedFiles.push(files[i].name);
+        }
+    }
     renderFileList();
+}
+
+function handleFileSelect(input){
+    var files = input.files;
+    selectedFiles = [];
+    for(var i=0; i<files.length; i++) {
+        selectedFiles.push(files[i].name);
+    }
+    renderPdfFileList();
 }
 
 function renderFileList(){
     document.getElementById('fileList').innerHTML = selectedFiles.map(function(f,i){return '<div class="file-item"><span>' + f + '</span><span class="file-remove" onclick="selectedFiles.splice(' + i + ',1);renderFileList()">x</span></div>';}).join('');
+}
+
+function renderPdfFileList(){
+    document.getElementById('pdfFileList').innerHTML = selectedFiles.map(function(f,i){return '<div class="file-item"><span>' + f + '</span><span class="file-remove" onclick="selectedFiles.splice(' + i + ',1);renderPdfFileList()">x</span></div>';}).join('');
+}
+
+function addCustomTag(){
+    var input = document.getElementById('customTagInput');
+    var tag = input.value.trim();
+    if(tag && customTags.indexOf(tag) === -1) {
+        customTags.push(tag);
+        input.value = '';
+        renderCustomTags();
+    }
+}
+
+function removeCustomTag(index){
+    customTags.splice(index, 1);
+    renderCustomTags();
+}
+
+function renderCustomTags(){
+    document.getElementById('customTags').innerHTML = customTags.map(function(t,i){return '<span class="custom-tag">' + t + '<span onclick="removeCustomTag(' + i + ')">x</span></span>';}).join('');
 }
 
 function addPaper(){
@@ -336,15 +418,16 @@ function addPaper(){
     var category = document.getElementById('paperCategory').value;
     var newPapers = [];
     var newId = papers.length > 0 ? Math.max.apply(null, papers.map(function(p){return p.id;})) + 1 : 1;
+    var allTags = [category].concat(customTags);
     
     if(type === 'arxiv'){
         var id = document.getElementById('paperInput').value.trim();
-        if(id) newPapers.push({id:newId,title:"论文 " + id,arxiv:id,date:new Date().toISOString().split('T')[0],tags:[category],abstract:"",translated:"",original:"",analysis:""});
+        if(id) newPapers.push({id:newId,title:"论文 " + id,arxiv:id,date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",parsed:false});
     } else if(type === 'arxiv-batch'){
         var ids = document.getElementById('batchInput').value.split('\n').filter(function(x){return x.trim();});
-        ids.forEach(function(id,i){newPapers.push({id:newId+i,title:"论文 " + id.trim(),arxiv:id.trim(),date:new Date().toISOString().split('T')[0],tags:[category],abstract:"",translated:"",original:"",analysis:""});});
-    } else if(type === 'pdf'){
-        selectedFiles.forEach(function(f,i){newPapers.push({id:newId+i,title:f.replace('.pdf',''),arxiv:"PDF",date:new Date().toISOString().split('T')[0],tags:[category],abstract:"",translated:"",original:"",analysis:""});});
+        ids.forEach(function(id,i){newPapers.push({id:newId+i,title:"论文 " + id.trim(),arxiv:id.trim(),date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",parsed:false});});
+    } else if(type === 'folder' || type === 'pdf'){
+        selectedFiles.forEach(function(f,i){newPapers.push({id:newId+i,title:f.replace('.pdf',''),arxiv:"PDF",date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",parsed:false});});
     }
     
     papers.unshift.apply(papers, newPapers);
@@ -353,6 +436,12 @@ function addPaper(){
     renderPaperList();
     updateContent();
     hideAddPaperModal();
+    
+    // 自动解析第一篇
+    if(newPapers.length > 0) {
+        selectPaper(newPapers[0].id);
+        parsePaper();
+    }
 }
 
 function askQuestion(btn){document.getElementById('chatInput').value = btn.textContent;sendMessage();}
