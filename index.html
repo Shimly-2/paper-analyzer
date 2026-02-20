@@ -104,7 +104,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .chat-input-wrapper{display:flex;gap:8px}
 .chat-input{flex:1;padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:13px}
 .send-btn{padding:10px 16px;background:var(--accent);border:none;border-radius:8px;color:white;cursor:pointer}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:200}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:200}
 .modal-overlay.show{display:flex}
 .modal{background:var(--bg-secondary);border-radius:12px;width:560px;max-width:90vw;border:1px solid var(--border-color);max-height:80vh;overflow-y:auto}
 .modal-header{padding:16px 20px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between}
@@ -190,36 +190,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 </div>
 </div>
 <script>
-let papers = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
-let currentPaper = papers.length > 0 ? papers[0] : null;
-let currentFilter = "all";
-let selectedFiles = [];
+var papers = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
+var currentPaper = papers.length > 0 ? papers[0] : null;
+var currentFilter = "all";
+var selectedFiles = [];
 
 function savePapers() { localStorage.setItem('paperLibrary', JSON.stringify(papers)); }
 
 function renderPaperList() {
-    const search = document.getElementById("paperSearch").value.toLowerCase();
-    const filtered = papers.filter(p => {
-        const matchFilter = currentFilter === "all" || p.tags.includes(currentFilter);
-        const matchSearch = p.title.toLowerCase().includes(search) || (p.arxiv && p.arxiv.toLowerCase().includes(search));
+    var search = document.getElementById("paperSearch").value.toLowerCase();
+    var filtered = papers.filter(function(p) {
+        var matchFilter = currentFilter === "all" || p.tags.indexOf(currentFilter) !== -1;
+        var matchSearch = p.title.toLowerCase().indexOf(search) !== -1 || (p.arxiv && p.arxiv.toLowerCase().indexOf(search) !== -1);
         return matchFilter && matchSearch;
     });
     if (filtered.length === 0) {
         document.getElementById("paperList").innerHTML = '<div class="paper-empty">论文库为空<br>点击右上角"添加论文"开始</div>';
     } else {
-        document.getElementById("paperList").innerHTML = filtered.map(p => 
-            `<div class="paper-item ${currentPaper && p.id===currentPaper.id?'active':''}" onclick="selectPaper(${p.id})">
-                <div class="paper-title">${p.title}</div>
-                <div class="paper-meta">${p.arxiv ? 'arXiv: '+p.arxiv : 'PDF'} | ${p.date}</div>
-                <div class="paper-tags">${p.tags.map(t=>`<span class="paper-tag">${t}</span>`).join('')}</div>
-                <div class="paper-actions"><span class="paper-action" onclick="event.stopPropagation();deletePaper(${p.id})">删除</span></div>
-            </div>`
-        ).join('');
+        document.getElementById("paperList").innerHTML = filtered.map(function(p) {
+            return '<div class="paper-item ' + (currentPaper && p.id === currentPaper.id ? 'active' : '') + '" onclick="selectPaper(' + p.id + ')">' +
+                '<div class="paper-title">' + p.title + '</div>' +
+                '<div class="paper-meta">' + (p.arxiv ? 'arXiv: ' + p.arxiv : 'PDF') + ' | ' + p.date + '</div>' +
+                '<div class="paper-tags">' + p.tags.map(function(t) { return '<span class="paper-tag">' + t + '</span>'; }).join('') + '</div>' +
+                '<div class="paper-actions"><span class="paper-action" onclick="event.stopPropagation();deletePaper(' + p.id + ')">删除</span></div>' +
+                '</div>';
+        }).join('');
     }
 }
 
 function selectPaper(id) {
-    currentPaper = papers.find(p=>p.id===id);
+    currentPaper = papers.find(function(p){return p.id===id;});
     renderPaperList();
     updateContent();
     document.getElementById('translatedContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">点击上方"翻译"按钮获取中文翻译</p>';
@@ -229,21 +229,21 @@ function selectPaper(id) {
 function updateContent() {
     if (!currentPaper) {
         document.getElementById("originalContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">请添加论文</p>';
-        document.getElementById("analysisTitle").textContent = '';
+        document.getElementById("analysisTitle").innerHTML = '';
         return;
     }
-    const original = currentPaper.original || `<h1>${currentPaper.title}</h1><p>${currentPaper.abstract || '点击"翻译"获取全文翻译'}</p>`;
+    var original = currentPaper.original || '<h1>' + currentPaper.title + '</h1><p>' + (currentPaper.abstract || '点击"翻译"获取全文翻译') + '</p>';
     document.getElementById("originalContent").innerHTML = original;
-    document.getElementById("analysisTitle").textContent = currentPaper.title;
-    document.getElementById("analysisMeta").textContent = currentPaper.arxiv ? 'arXiv: '+currentPaper.arxiv+' | '+currentPaper.date : currentPaper.date;
+    document.getElementById("analysisTitle").innerHTML = currentPaper.title;
+    document.getElementById("analysisMeta").innerHTML = currentPaper.arxiv ? 'arXiv: ' + currentPaper.arxiv + ' | ' + currentPaper.date : currentPaper.date;
 }
 
 function translatePaper() {
     if (!currentPaper) return;
-    const btn = document.getElementById('translateBtn');
+    var btn = document.getElementById('translateBtn');
     btn.innerHTML = '<span class="loading"></span> 翻译中...';
-    setTimeout(() => {
-        const translated = currentPaper.translated || `<h1>${currentPaper.title}</h1><h2>摘要</h2><p>这是一篇关于${currentPaper.title}的学术论文。全文翻译功能需要后端API支持，这里是模拟演示。</p><h2>1. 引言</h2><p>本文研究了${currentPaper.title}相关的主题。</p>`;
+    setTimeout(function() {
+        var translated = currentPaper.translated || '<h1>' + currentPaper.title + '</h1><h2>摘要</h2><p>这是一篇关于' + currentPaper.title + '的学术论文。翻译功能需要后端API支持，这里是模拟演示。</p><h2>1. 引言</h2><p>本文研究了相关主题。</p>';
         currentPaper.translated = translated;
         savePapers();
         document.getElementById('translatedContent').innerHTML = translated;
@@ -253,10 +253,10 @@ function translatePaper() {
 
 function deepRead() {
     if (!currentPaper) return;
-    const btn = document.getElementById('readBtn');
+    var btn = document.getElementById('readBtn');
     btn.innerHTML = '<span class="loading"></span> 分析中...';
-    setTimeout(() => {
-        const analysis = `<div class="analysis-section"><h3 class="section-title"><span class="section-dot" style="background:var(--blue)"></span>1. 研究动机</h3><ul class="section-list"><li><strong>研究问题</strong>：${currentPaper.title} 解决的核心问题</li><li><strong>研究背景</strong>：相关领域的研究现状与挑战</li><li><strong>现有局限</strong>：当前方法存在的不足</li></ul></div><div class="analysis-section"><h3 class="section-title"><span class="section-dot" style="background:var(--orange)"></span>2. 核心思想</h3><ul class="section-list"><li><strong>核心贡献</strong>：论文的主要贡献点</li><li><strong>创新点</strong>：相比现有方法的改进</li><li><strong>方法</strong>：提出的方法概述</li></ul></div><div class="dimension-cards"><div class="dimension-card blue"><div class="dimension-header"><div class="dimension-icon">1</div><span class="dimension-title">创新性</span></div><div class="dimension-content">评估论文在方法论上的创新程度</div><div class="dimension-score"><span class="score-badge">4</span><span class="score-label">4/5</span></div></div><div class="dimension-card orange"><div class="dimension-header"><div class="dimension-icon">2</div><span class="dimension-title">完整性</span></div><div class="dimension-content">评估实验设计的完整性</div><div class="dimension-score"><span class="score-badge">3</span><span class="score-label">3/5</span></div></div><div class="dimension-card green"><div class="dimension-header"><div class="dimension-icon">3</div><span class="dimension-title">写作</span></div><div class="dimension-content">评估论文写作质量</div><div class="dimension-score"><span class="score-badge">4</span><span class="score-label">4/5</span></div></div></div>`;
+    setTimeout(function() {
+        var analysis = '<div class="analysis-section"><h3 class="section-title"><span class="section-dot" style="background:var(--blue)"></span>1. 研究动机</h3><ul class="section-list"><li><strong>研究问题</strong>：' + currentPaper.title + ' 解决的核心问题</li><li><strong>研究背景</strong>：相关领域的研究现状与挑战</li><li><strong>现有局限</strong>：当前方法存在的不足</li></ul></div><div class="analysis-section"><h3 class="section-title"><span class="section-dot" style="background:var(--orange)"></span>2. 核心思想</h3><ul class="section-list"><li><strong>核心贡献</strong>：论文的主要贡献点</li><li><strong>创新点</strong>：相比现有方法的改进</li><li><strong>方法</strong>：提出的方法概述</li></ul></div><div class="dimension-cards"><div class="dimension-card blue"><div class="dimension-header"><div class="dimension-icon">1</div><span class="dimension-title">创新性</span></div><div class="dimension-content">评估论文在方法论上的创新程度</div><div class="dimension-score"><span class="score-badge">4</span><span class="score-label">4/5</span></div></div><div class="dimension-card orange"><div class="dimension-header"><div class="dimension-icon">2</div><span class="dimension-title">完整性</span></div><div class="dimension-content">评估实验设计的完整性</div><div class="dimension-score"><span class="score-badge">3</span><span class="score-label">3/5</span></div></div><div class="dimension-card green"><div class="dimension-header"><div class="dimension-icon">3</div><span class="dimension-title">写作</span></div><div class="dimension-content">评估论文写作质量</div><div class="dimension-score"><span class="score-badge">4</span><span class="score-label">4/5</span></div></div></div>';
         currentPaper.analysis = analysis;
         savePapers();
         document.getElementById('analysisContent').innerHTML = analysis;
@@ -265,7 +265,7 @@ function deepRead() {
 }
 
 function deletePaper(id) {
-    papers = papers.filter(p=>p.id!==id);
+    papers = papers.filter(function(p){return p.id!==id;});
     currentPaper = papers.length > 0 ? papers[0] : null;
     savePapers();
     renderPaperList();
@@ -273,7 +273,7 @@ function deletePaper(id) {
 }
 
 function clearAllPapers() {
-    if(confirm('确定清空所有论文？')) {
+    if(confirm("确定清空所有论文？")) {
         papers = [];
         currentPaper = null;
         savePapers();
@@ -284,60 +284,70 @@ function clearAllPapers() {
 
 function setFilter(filter) {
     currentFilter = filter;
-    document.querySelectorAll('.filter-tag').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.filter-tag').forEach(function(t){t.classList.remove('active');});
     event.target.classList.add('active');
     renderPaperList();
 }
 
 function switchMode(mode) {
-    document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.mode-tab').forEach(function(t){t.classList.remove('active');});
     event.target.classList.add('active');
-    document.getElementById('readingMode').style.display = mode==='reading'?'block':'none';
-    document.getElementById('analysisMode').style.display = mode==='analysis'?'block':'none';
+    document.getElementById('readingMode').style.display = mode === 'reading' ? 'block' : 'none';
+    document.getElementById('analysisMode').style.display = mode === 'analysis' ? 'block' : 'none';
 }
 
 function toggleSidebar(side) {
-    const left = document.getElementById('sidebarLeft');
-    const right = document.getElementById('sidebarRight');
-    const tl = document.getElementById('toggleLeft');
-    const tr = document.getElementById('toggleRight');
-    if(side==='left'){left.classList.toggle('collapsed');tl.classList.toggle('collapsed');tl.innerHTML = left.classList.contains('collapsed')?'&#8250;':'&#8249;';}
-    else{right.classList.toggle('collapsed');tr.classList.toggle('collapsed');tr.innerHTML = right.classList.contains('collapsed')?'&#8249;':'&#8250;';}
+    var left = document.getElementById('sidebarLeft');
+    var right = document.getElementById('sidebarRight');
+    var tl = document.getElementById('toggleLeft');
+    var tr = document.getElementById('toggleRight');
+    if(side === 'left'){
+        left.classList.toggle('collapsed');
+        tl.classList.toggle('collapsed');
+        tl.innerHTML = left.classList.contains('collapsed') ? '&#8250;' : '&#8249;';
+    } else {
+        right.classList.toggle('collapsed');
+        tr.classList.toggle('collapsed');
+        tr.innerHTML = right.classList.contains('collapsed') ? '&#8249;' : '&#8250;';
+    }
 }
 
 function showAddPaperModal(){document.getElementById('addPaperModal').classList.add('show');}
 function hideAddPaperModal(){document.getElementById('addPaperModal').classList.remove('show');selectedFiles=[];document.getElementById('fileList').innerHTML='';}
 
 function toggleInputMethod(){
-    const t=document.getElementById('inputType').value;
-    document.getElementById('singleArxivGroup').style.display=t==='arxiv'?'block':'none';
-    document.getElementById('batchArxivGroup').style.display=t==='arxiv-batch'?'block':'none';
-    document.getElementById('pdfGroup').style.display=t==='pdf'?'block':'none';
+    var t = document.getElementById('inputType').value;
+    document.getElementById('singleArxivGroup').style.display = t === 'arxiv' ? 'block' : 'none';
+    document.getElementById('batchArxivGroup').style.display = t === 'arxiv-batch' ? 'block' : 'none';
+    document.getElementById('pdfGroup').style.display = t === 'pdf' ? 'block' : 'none';
 }
 
 function handleFileSelect(input){
-    for(let i=0;i<input.files.length;i++) selectedFiles.push(input.files[i].name);
+    for(var i=0;i<input.files.length;i++) selectedFiles.push(input.files[i].name);
     renderFileList();
 }
+
 function renderFileList(){
-    document.getElementById('fileList').innerHTML = selectedFiles.map((f,i)=>`<div class="file-item"><span>${f}</span><span class="file-remove" onclick="selectedFiles.splice(${i},1);renderFileList()">x</span></div>`).join('');
+    document.getElementById('fileList').innerHTML = selectedFiles.map(function(f,i){return '<div class="file-item"><span>' + f + '</span><span class="file-remove" onclick="selectedFiles.splice(' + i + ',1);renderFileList()">x</span></div>';}).join('');
 }
 
 function addPaper(){
-    const type=document.getElementById('inputType').value;
-    const category=document.getElementById('paperCategory').value;
-    let newPapers=[];
-    let newId = papers.length > 0 ? Math.max(...papers.map(p=>p.id)) + 1 : 1;
-    if(type==='arxiv'){
-        const id=document.getElementById('paperInput').value.trim();
-        if(id) newPapers.push({id:newId,title:"论文 "+id,arxiv:id,date:new Date().toISOString().split('T')[0],tags:[category],abstract:"",translated:"",original:"",analysis:""});
-    }else if(type==='arxiv-batch'){
-        const ids=document.getElementById('batchInput').value.split('\n').filter(x=>x.trim());
-        ids.forEach((id,i)=>newPapers.push({id:newId+i,title:"论文 "+id.trim(),arxiv:id.trim(),date:new Date().toISOString().split('T')[0],tags:[category],abstract:"",translated:"",original:"",analysis:""}));
-    }else if(type==='pdf'){
-        selectedFiles.forEach((f,i)=>newPapers.push({id:newId+i,title:f.replace('.pdf',''),arxiv:"PDF",date:new Date().toISOString().split('T')[0],tags:[category],abstract:"",translated:"",original:"",analysis:""}));
+    var type = document.getElementById('inputType').value;
+    var category = document.getElementById('paperCategory').value;
+    var newPapers = [];
+    var newId = papers.length > 0 ? Math.max.apply(null, papers.map(function(p){return p.id;})) + 1 : 1;
+    
+    if(type === 'arxiv'){
+        var id = document.getElementById('paperInput').value.trim();
+        if(id) newPapers.push({id:newId,title:"论文 " + id,arxiv:id,date:new Date().toISOString().split('T')[0],tags:[category],abstract:"",translated:"",original:"",analysis:""});
+    } else if(type === 'arxiv-batch'){
+        var ids = document.getElementById('batchInput').value.split('\n').filter(function(x){return x.trim();});
+        ids.forEach(function(id,i){newPapers.push({id:newId+i,title:"论文 " + id.trim(),arxiv:id.trim(),date:new Date().toISOString().split('T')[0],tags:[category],abstract:"",translated:"",original:"",analysis:""});});
+    } else if(type === 'pdf'){
+        selectedFiles.forEach(function(f,i){newPapers.push({id:newId+i,title:f.replace('.pdf',''),arxiv:"PDF",date:new Date().toISOString().split('T')[0],tags:[category],abstract:"",translated:"",original:"",analysis:""});});
     }
-    papers.unshift(...newPapers);
+    
+    papers.unshift.apply(papers, newPapers);
     currentPaper = papers[0];
     savePapers();
     renderPaperList();
@@ -345,15 +355,15 @@ function addPaper(){
     hideAddPaperModal();
 }
 
-function askQuestion(btn){document.getElementById('chatInput').value=btn.textContent;sendMessage();}
+function askQuestion(btn){document.getElementById('chatInput').value = btn.textContent;sendMessage();}
 function sendMessage(){
-    const input=document.getElementById('chatInput');
-    const msg=input.value.trim();
-    if(!msg)return;
-    const m=document.getElementById('chatMessages');
-    m.innerHTML+=`<div class="chat-bubble user">${msg}</div><div class="chat-bubble">正在分析...</div>`;
-    m.scrollTop=m.scrollHeight;
-    input.value='';
+    var input = document.getElementById('chatInput');
+    var msg = input.value.trim();
+    if(!msg) return;
+    var m = document.getElementById('chatMessages');
+    m.innerHTML += '<div class="chat-bubble user">' + msg + '</div><div class="chat-bubble">正在分析...</div>';
+    m.scrollTop = m.scrollHeight;
+    input.value = '';
 }
 
 renderPaperList();
