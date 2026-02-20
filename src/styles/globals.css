@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #1A1B1E;
+  --bg-secondary: #25262B;
+  --bg-tertiary: #2C2E33;
+  --text-primary: #F0F0F0;
+  --text-secondary: #A0A0A0;
+  --accent-blue: #4A90D9;
+  --accent-orange: #E8A87C;
+  --accent-red: #C25D5D;
+  --accent-purple: #9B7ED9;
+  --border-color: #3A3C40;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 3px;
+}
+
+/* Paper list item */
+.paper-item {
+  @apply p-3 cursor-pointer transition-all duration-200;
+  border-left: 3px solid transparent;
+}
+
+.paper-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.paper-item.active {
+  background: var(--bg-tertiary);
+  border-left: 3px solid var(--accent-purple);
+}
+
+/* Chat bubble */
+.chat-bubble {
+  @apply p-3 rounded-lg max-w-[90%];
+  background: var(--bg-tertiary);
+}
+
+.chat-bubble.user {
+  background: var(--accent-purple);
+  margin-left: auto;
+}
+
+/* Tag */
+.tag {
+  @apply px-2 py-0.5 rounded text-xs font-medium;
+}
+
+.tag.active {
+  background: var(--accent-purple);
+  color: white;
+}
+
+/* Button */
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-colors;
+}
+
+.btn-primary {
+  background: var(--accent-purple);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #8A6DC9;
+}
+
+/* Card */
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+/* Input */
+input {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  @apply px-3 py-2 rounded-lg;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--accent-purple);
+}
+
+input::placeholder {
+  color: var(--text-secondary);
+}
