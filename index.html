@@ -1,378 +1,363 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paper Analyzer</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root { --bg-primary: #121212; --bg-secondary: #1A1B1E; --bg-tertiary: #25262B; --border-color: #3A3C40; --accent: #9B7ED9; --text-primary: #FFFFFF; --text-secondary: #A0A0A0; --text-muted: #6B6B6B; --blue: #4A90D9; --orange: #E8A87C; --green: #7ED98E; --red: #C25D5D; }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-primary); color: var(--text-primary); height: 100vh; overflow: hidden; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-secondary); }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
-
-        .top-nav { position: fixed; top: 0; left: 0; right: 0; height: 52px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 100; }
-        .nav-left { display: flex; align-items: center; gap: 16px; }
-        .nav-logo { font-size: 16px; font-weight: 700; color: var(--accent); }
-        .nav-tabs { display: flex; gap: 4px; }
-        .nav-tab { padding: 8px 16px; font-size: 13px; color: var(--text-secondary); cursor: pointer; border-radius: 6px; transition: all 0.2s; border: none; background: transparent; }
-        .nav-tab:hover { background: var(--bg-tertiary); }
-        .nav-tab.active { background: var(--accent); color: white; }
-        .nav-right { display: flex; gap: 8px; }
-        .nav-btn { padding: 7px 14px; font-size: 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-secondary); cursor: pointer; }
-        .nav-btn:hover { background: var(--border-color); }
-        .nav-btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
-
-        .container { display: flex; height: calc(100vh - 52px); margin-top: 52px; position: relative; }
-
-        .sidebar-left { width: 300px; background: var(--bg-secondary); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; transition: all 0.3s; }
-        .sidebar-left.collapsed { width: 0; overflow: hidden; }
-        .sidebar-right { width: 300px; background: var(--bg-secondary); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; transition: all 0.3s; }
-        .sidebar-right.collapsed { width: 0; overflow: hidden; }
-
-        .toggle-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 20px; height: 40px; background: var(--bg-tertiary); border: 1px solid var(--border-color); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); z-index: 10; transition: left 0.3s, right 0.3s; }
-        .toggle-btn:hover { background: var(--border-color); }
-        .toggle-left { left: 300px; border-radius: 0 6px 6px 0; }
-        .toggle-left.collapsed { left: 0; }
-        .toggle-right { right: 300px; border-radius: 6px 0 0 6px; }
-        .toggle-right.collapsed { right: 0; }
-
-        .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border-color); }
-        .search-input { width: 100%; padding: 10px 14px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 13px; margin-bottom: 12px; }
-        .search-input:focus { outline: none; border-color: var(--accent); }
-        .filter-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-        .filter-tag { padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; border: 1px solid transparent; }
-        .filter-tag.active { background: var(--blue); color: white; }
-        .filter-tag:not(.active) { background: var(--bg-tertiary); color: var(--text-secondary); }
-
-        .paper-list { flex: 1; overflow-y: auto; padding: 8px; }
-        .paper-item { padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 6px; border: 1px solid transparent; }
-        .paper-item:hover { background: var(--bg-tertiary); }
-        .paper-item.active { background: var(--bg-tertiary); border-color: var(--blue); }
-        .paper-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
-        .paper-meta { font-size: 11px; color: var(--blue); }
-        .paper-tags { display: flex; gap: 4px; margin-top: 6px; }
-        .paper-tag { padding: 2px 6px; border-radius: 3px; font-size: 10px; background: var(--bg-primary); color: var(--text-muted); }
-
-        .main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
-        .mode-tabs { display: flex; gap: 4px; padding: 12px 16px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); }
-        .mode-tab { padding: 8px 20px; font-size: 13px; color: var(--text-secondary); cursor: pointer; border-radius: 6px; border: none; background: transparent; }
-        .mode-tab.active { background: var(--accent); color: white; }
-        .main-scroll { flex: 1; overflow-y: auto; padding: 20px; }
-
-        .reading-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .reading-pane { background: var(--bg-secondary); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
-        .pane-header { padding: 12px 16px; background: var(--bg-tertiary); font-size: 13px; font-weight: 600; border-bottom: 1px solid var(--border-color); }
-        .pane-content { flex: 1; overflow-y: auto; padding: 20px; font-size: 14px; line-height: 1.8; }
-        .pane-content h1 { font-size: 20px; margin-bottom: 16px; }
-        .pane-content h2 { font-size: 16px; margin: 20px 0 10px; color: var(--accent); }
-        .pane-content p { margin-bottom: 12px; color: var(--text-secondary); }
-
-        .analysis-header { margin-bottom: 24px; }
-        .analysis-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-        .analysis-meta { font-size: 12px; color: var(--text-muted); }
-        .analysis-section { background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-        .section-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-        .section-dot { width: 8px; height: 8px; border-radius: 50%; }
-        .section-list { list-style: none; }
-        .section-list li { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; padding-left: 16px; position: relative; }
-        .section-list li::before { content: "•"; position: absolute; left: 0; color: var(--accent); }
-
-        .dimension-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
-        .dimension-card { border-radius: 12px; padding: 16px; min-height: 180px; }
-        .dimension-card.blue { background: linear-gradient(135deg, #1a3a5c, #0d1f33); border: 1px solid #2a5a8c; }
-        .dimension-card.orange { background: linear-gradient(135deg, #4a3520, #2d1f14); border: 1px solid #8a5a30; }
-        .dimension-card.green { background: linear-gradient(135deg, #1a4a30, #0d2a1c); border: 1px solid #2a7a50; }
-        .dimension-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .dimension-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
-        .dimension-card.blue .dimension-icon { background: var(--blue); }
-        .dimension-card.orange .dimension-icon { background: var(--orange); }
-        .dimension-card.green .dimension-icon { background: var(--green); }
-        .dimension-title { font-size: 13px; font-weight: 600; }
-        .dimension-card.blue .dimension-title { color: var(--blue); }
-        .dimension-card.orange .dimension-title { color: var(--orange); }
-        .dimension-card.green .dimension-title { color: var(--green); }
-        .dimension-content { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
-        .dimension-score { display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
-        .score-badge { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
-        .dimension-card.blue .score-badge { background: var(--blue); color: white; }
-        .dimension-card.orange .score-badge { background: var(--orange); color: #1a1a1a; }
-        .dimension-card.green .score-badge { background: var(--green); color: #1a1a1a; }
-        .score-label { font-size: 11px; color: var(--text-muted); }
-
-        .chat-header { padding: 16px; border-bottom: 1px solid var(--border-color); }
-        .chat-title { font-size: 14px; font-weight: 600; }
-        .quick-questions { padding: 12px 16px; border-bottom: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; }
-        .quick-btn { padding: 10px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-secondary); font-size: 12px; text-align: left; cursor: pointer; }
-        .quick-btn:hover { background: var(--border-color); }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-        .chat-bubble { padding: 12px 14px; background: var(--bg-tertiary); border-radius: 10px; font-size: 13px; color: var(--text-secondary); }
-        .chat-bubble.user { background: var(--accent); color: white; align-self: flex-end; }
-        .chat-input-area { padding: 16px; border-top: 1px solid var(--border-color); }
-        .chat-input-wrapper { display: flex; gap: 8px; }
-        .chat-input { flex: 1; padding: 10px 14px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 13px; }
-        .chat-input:focus { outline: none; border-color: var(--accent); }
-        .send-btn { padding: 10px 16px; background: var(--accent); border: none; border-radius: 8px; color: white; cursor: pointer; }
-
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 200; }
-        .modal-overlay.show { display: flex; }
-        .modal { background: var(--bg-secondary); border-radius: 12px; width: 560px; max-width: 90vw; border: 1px solid var(--border-color); max-height: 80vh; overflow-y: auto; }
-        .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; }
-        .modal-title { font-size: 15px; font-weight: 600; }
-        .modal-close { cursor: pointer; color: var(--text-muted); }
-        .modal-body { padding: 20px; }
-        .form-group { margin-bottom: 16px; }
-        .form-label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
-        .form-input, .form-select, .form-textarea { width: 100%; padding: 10px 14px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 13px; }
-        .form-textarea { min-height: 100px; resize: vertical; }
-        .form-file { width: 100%; padding: 20px; background: var(--bg-tertiary); border: 2px dashed var(--border-color); border-radius: 6px; text-align: center; cursor: pointer; }
-        .form-file:hover { border-color: var(--accent); }
-        .form-file input { display: none; }
-        .file-list { margin-top: 12px; }
-        .file-item { display: flex; justify-content: space-between; padding: 8px 12px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
-        .file-remove { cursor: pointer; color: var(--red); }
-        .modal-footer { padding: 16px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 8px; }
-
-        .mobile-nav { display: none; }
-        @media (max-width: 1200px) { .dimension-cards { grid-template-columns: 1fr; } }
-        @media (max-width: 1024px) { .sidebar-right { display: none; } }
-        @media (max-width: 768px) {
-            .sidebar-left { display: none; }
-            .reading-container { grid-template-columns: 1fr; }
-            .nav-tabs { display: none; }
-            .mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-secondary); border-top: 1px solid var(--border-color); padding: 8px 0; }
-            .mobile-nav-items { display: flex; justify-content: space-around; width: 100%; }
-            .mobile-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: var(--text-muted); }
-            .mobile-item.active { color: var(--accent); }
-            .mobile-icon { font-size: 20px; }
-            .main-content { padding-bottom: 60px; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paper Analyzer</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg-primary:#121212;--bg-secondary:#1A1B1E;--bg-tertiary:#25262B;--border-color:#3A3C40;--accent:#9B7ED9;--text-primary:#FFFFFF;--text-secondary:#A0A0A0;--text-muted:#6B6B6B;--blue:#4A90D9;--orange:#E8A87C;--green:#7ED98E;--red:#C25D5D}
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary);height:100vh;overflow:hidden}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg-secondary)}
+::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:3px}
+.top-nav{position:fixed;top:0;left:0;right:0;height:52px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:100}
+.nav-left{display:flex;align-items:center;gap:16px}
+.nav-logo{font-size:16px;font-weight:700;color:var(--accent)}
+.nav-tabs{display:flex;gap:4px}
+.nav-tab{padding:8px 16px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-radius:6px;border:none;background:transparent}
+.nav-tab.active{background:var(--accent);color:white}
+.nav-right{display:flex;gap:8px}
+.nav-btn{padding:7px 14px;font-size:12px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-secondary);cursor:pointer}
+.nav-btn.primary{background:var(--accent);border-color:var(--accent);color:white}
+.container{display:flex;height:calc(100vh - 52px);margin-top:52px;position:relative}
+.sidebar-left{width:300px;background:var(--bg-secondary);border-right:1px solid var(--border-color);display:flex;flex-direction:column;transition:all .3s}
+.sidebar-left.collapsed{width:0;overflow:hidden}
+.sidebar-right{width:300px;background:var(--bg-secondary);border-left:1px solid var(--border-color);display:flex;flex-direction:column;transition:all .3s}
+.sidebar-right.collapsed{width:0;overflow:hidden}
+.toggle-btn{position:absolute;top:50%;transform:translateY(-50%);width:20px;height:40px;background:var(--bg-tertiary);border:1px solid var(--border-color);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);z-index:10}
+.toggle-left{left:300px;border-radius:0 6px 6px 0}
+.toggle-left.collapsed{left:0}
+.toggle-right{right:300px;border-radius:6px 0 0 6px}
+.toggle-right.collapsed{right:0}
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border-color)}
+.search-input{width:100%;padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:13px;margin-bottom:12px}
+.filter-tags{display:flex;flex-wrap:wrap;gap:6px}
+.filter-tag{padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;border:1px solid transparent}
+.filter-tag.active{background:var(--blue);color:white}
+.filter-tag:not(.active){background:var(--bg-tertiary);color:var(--text-secondary)}
+.paper-list{flex:1;overflow-y:auto;padding:8px}
+.paper-empty{padding:40px 20px;text-align:center;color:var(--text-muted);font-size:13px}
+.paper-item{padding:12px;border-radius:8px;cursor:pointer;margin-bottom:6px;border:1px solid transparent}
+.paper-item:hover{background:var(--bg-tertiary)}
+.paper-item.active{background:var(--bg-tertiary);border-color:var(--blue)}
+.paper-title{font-size:13px;font-weight:500;margin-bottom:4px}
+.paper-meta{font-size:11px;color:var(--blue)}
+.paper-tags{display:flex;gap:4px;margin-top:6px}
+.paper-tag{padding:2px 6px;border-radius:3px;font-size:10px;background:var(--bg-primary);color:var(--text-muted)}
+.paper-actions{display:flex;gap:4px;margin-top:8px}
+.paper-action{font-size:10px;padding:3px 8px;background:var(--bg-secondary);border-radius:4px;color:var(--text-muted);cursor:pointer}
+.paper-action:hover{color:var(--accent)}
+.main-content{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.mode-tabs{display:flex;gap:4px;padding:12px 16px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color)}
+.mode-tab{padding:8px 20px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-radius:6px;border:none;background:transparent}
+.mode-tab.active{background:var(--accent);color:white}
+.main-scroll{flex:1;overflow-y:auto;padding:20px}
+.reading-container{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.reading-pane{background:var(--bg-secondary);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.pane-header{padding:12px 16px;background:var(--bg-tertiary);font-size:13px;font-weight:600;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center}
+.pane-content{flex:1;overflow-y:auto;padding:20px;font-size:14px;line-height:1.8}
+.pane-content h1{font-size:20px;margin-bottom:16px}
+.pane-content h2{font-size:16px;margin:20px 0 10px;color:var(--accent)}
+.pane-content p{margin-bottom:12px;color:var(--text-secondary)}
+.loading{display:inline-block;width:14px;height:14px;border:2px solid var(--border-color);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.analysis-header{margin-bottom:24px}
+.analysis-title{font-size:22px;font-weight:700;margin-bottom:8px}
+.analysis-meta{font-size:12px;color:var(--text-muted)}
+.analysis-section{background:var(--bg-secondary);border-radius:12px;padding:20px;margin-bottom:16px}
+.section-title{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.section-dot{width:8px;height:8px;border-radius:50%}
+.section-list{list-style:none}
+.section-list li{font-size:13px;color:var(--text-secondary);margin-bottom:8px;padding-left:16px;position:relative}
+.section-list li::before{content:"•";position:absolute;left:0;color:var(--accent)}
+.dimension-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}
+.dimension-card{border-radius:12px;padding:16px;min-height:180px}
+.dimension-card.blue{background:linear-gradient(135deg,#1a3a5c,#0d1f33);border:1px solid #2a5a8c}
+.dimension-card.orange{background:linear-gradient(135deg,#4a3520,#2d1f14);border:1px solid #8a5a30}
+.dimension-card.green{background:linear-gradient(135deg,#1a4a30,#0d2a1c);border:1px solid #2a7a50}
+.dimension-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.dimension-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.dimension-card.blue .dimension-icon{background:var(--blue)}
+.dimension-card.orange .dimension-icon{background:var(--orange)}
+.dimension-card.green .dimension-icon{background:var(--green)}
+.dimension-title{font-size:13px;font-weight:600}
+.dimension-card.blue .dimension-title{color:var(--blue)}
+.dimension-card.orange .dimension-title{color:var(--orange)}
+.dimension-card.green .dimension-title{color:var(--green)}
+.dimension-content{font-size:12px;color:var(--text-secondary);margin-bottom:12px}
+.dimension-score{display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1)}
+.score-badge{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600}
+.dimension-card.blue .score-badge{background:var(--blue);color:white}
+.dimension-card.orange .score-badge{background:var(--orange);color:#1a1a1a}
+.dimension-card.green .score-badge{background:var(--green);color:#1a1a1a}
+.score-label{font-size:11px;color:var(--text-muted)}
+.chat-header{padding:16px;border-bottom:1px solid var(--border-color)}
+.chat-title{font-size:14px;font-weight:600}
+.quick-questions{padding:12px 16px;border-bottom:1px solid var(--border-color);display:flex;flex-direction:column;gap:8px}
+.quick-btn{padding:10px 12px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-secondary);font-size:12px;text-align:left;cursor:pointer}
+.quick-btn:hover{background:var(--border-color)}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.chat-bubble{padding:12px 14px;background:var(--bg-tertiary);border-radius:10px;font-size:13px;color:var(--text-secondary)}
+.chat-bubble.user{background:var(--accent);color:white;align-self:flex-end}
+.chat-input-area{padding:16px;border-top:1px solid var(--border-color)}
+.chat-input-wrapper{display:flex;gap:8px}
+.chat-input{flex:1;padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:13px}
+.send-btn{padding:10px 16px;background:var(--accent);border:none;border-radius:8px;color:white;cursor:pointer}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:200}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg-secondary);border-radius:12px;width:560px;max-width:90vw;border:1px solid var(--border-color);max-height:80vh;overflow-y:auto}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between}
+.modal-title{font-size:15px;font-weight:600}
+.modal-close{cursor:pointer;color:var(--text-muted)}
+.modal-body{padding:20px}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px}
+.form-input,.form-select,.form-textarea{width:100%;padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:13px}
+.form-textarea{min-height:100px;resize:vertical}
+.form-file{width:100%;padding:20px;background:var(--bg-tertiary);border:2px dashed var(--border-color);border-radius:6px;text-align:center;cursor:pointer}
+.form-file:hover{border-color:var(--accent)}
+.form-file input{display:none}
+.file-list{margin-top:12px}
+.file-item{display:flex;justify-content:space-between;padding:8px 12px;background:var(--bg-tertiary);border-radius:6px;margin-bottom:6px;font-size:12px}
+.file-remove{cursor:pointer;color:var(--red)}
+.modal-footer{padding:16px 20px;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:8px}
+.mobile-nav{display:none}
+@media(max-width:1200px){.dimension-cards{grid-template-columns:1fr}}
+@media(max-width:1024px){.sidebar-right{display:none}}
+@media(max-width:768px){
+.sidebar-left{display:none}
+.reading-container{grid-template-columns:1fr}
+.nav-tabs{display:none}
+.mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--bg-secondary);border-top:1px solid var(--border-color);padding:8px 0}
+.mobile-nav-items{display:flex;justify-content:space-around;width:100%}
+.mobile-item{display:flex;flex-direction:column;align-items:center;font-size:10px;color:var(--text-muted)}
+.mobile-item.active{color:var(--accent)}
+.mobile-icon{font-size:20px}
+.main-content{padding-bottom:60px}
+}
+</style>
 </head>
 <body>
-    <nav class="top-nav">
-        <div class="nav-left">
-            <span class="nav-logo">Paper Analyzer</span>
-            <div class="nav-tabs">
-                <button class="nav-tab active">论文库</button>
-                <button class="nav-tab">阅读模式</button>
-                <button class="nav-tab">分析报告</button>
-            </div>
-        </div>
-        <div class="nav-right">
-            <button class="nav-btn" onclick="showAddPaperModal()">+ 添加论文</button>
-            <button class="nav-btn">同步</button>
-        </div>
-    </nav>
+<nav class="top-nav">
+<div class="nav-left"><span class="nav-logo">Paper Analyzer</span>
+<div class="nav-tabs"><button class="nav-tab active">论文库</button><button class="nav-tab">阅读模式</button><button class="nav-tab">分析报告</button></div>
+</div>
+<div class="nav-right"><button class="nav-btn" onclick="showAddPaperModal()">+ 添加论文</button><button class="nav-btn" onclick="clearAllPapers()">清空</button></div>
+</nav>
+<div class="container">
+<aside class="sidebar-left" id="sidebarLeft">
+<div class="sidebar-header"><input type="text" class="search-input" placeholder="搜索论文..." id="paperSearch" oninput="renderPaperList()">
+<div class="filter-tags"><span class="filter-tag active" onclick="setFilter('all')">全部</span><span class="filter-tag" onclick="setFilter('benchmark')">Benchmark</span><span class="filter-tag" onclick="setFilter('long')">长文本</span><span class="filter-tag" onclick="setFilter('agent')">Agent</span></div>
+</div>
+<div class="paper-list" id="paperList"></div>
+</aside>
+<button class="toggle-btn toggle-left" id="toggleLeft" onclick="toggleSidebar('left')">&#8249;</button>
+<main class="main-content">
+<div class="mode-tabs"><button class="mode-tab active" onclick="switchMode('reading')">阅读模式</button><button class="mode-tab" onclick="switchMode('analysis')">分析报告</button></div>
+<div class="main-scroll">
+<div id="readingMode">
+<div class="reading-container">
+<div class="reading-pane"><div class="pane-header"><span>原文</span><button class="paper-action" onclick="translatePaper()" id="translateBtn">翻译</button></div><div class="pane-content" id="originalContent"></div></div>
+<div class="reading-pane"><div class="pane-header"><span>译文</span><button class="paper-action" onclick="deepRead()" id="readBtn">精读</button></div><div class="pane-content" id="translatedContent"><p style="color:var(--text-muted);text-align:center;margin-top:40px">点击上方"翻译"按钮获取中文翻译</p></div></div>
+</div>
+</div>
+<div id="analysisMode" style="display:none">
+<div class="analysis-header"><h1 class="analysis-title" id="analysisTitle"></h1><p class="analysis-meta" id="analysisMeta"></p></div>
+<div id="analysisContent"><p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"精读"按钮生成深度分析报告</p></div>
+</div>
+</div>
+</main>
+<button class="toggle-btn toggle-right" id="toggleRight" onclick="toggleSidebar('right')">&#8250;</button>
+<aside class="sidebar-right" id="sidebarRight">
+<div class="chat-header"><h3 class="chat-title">Agent 对话</h3></div>
+<div class="quick-questions"><button class="quick-btn" onclick="askQuestion(this)">核心创新是什么？</button><button class="quick-btn" onclick="askQuestion(this)">总结实验结果</button><button class="quick-btn" onclick="askQuestion(this)">解释算法流程</button></div>
+<div class="chat-messages" id="chatMessages"><div class="chat-bubble">你好！我是论文分析助手，请先添加论文。</div></div>
+<div class="chat-input-area"><div class="chat-input-wrapper"><input type="text" class="chat-input" id="chatInput" placeholder="输入问题..." onkeypress="if(event.key==='Enter')sendMessage()"><button class="send-btn" onclick="sendMessage()">发送</button></div></div>
+</aside>
+</div>
+<nav class="mobile-nav"><div class="mobile-nav-items"><div class="mobile-item active"><span class="mobile-icon">1</span><span>论文库</span></div><div class="mobile-item"><span class="mobile-icon">2</span><span>阅读</span></div><div class="mobile-item"><span class="mobile-icon">3</span><span>分析</span></div><div class="mobile-item"><span class="mobile-icon">4</span><span>问答</span></div></div></nav>
+<div class="modal-overlay" id="addPaperModal">
+<div class="modal"><div class="modal-header"><span class="modal-title">添加论文</span><span class="modal-close" onclick="hideAddPaperModal()">x</span></div>
+<div class="modal-body">
+<div class="form-group"><label class="form-label">输入方式</label><select class="form-select" id="inputType" onchange="toggleInputMethod()"><option value="arxiv">arXiv ID (单个)</option><option value="arxiv-batch">arXiv ID (批量)</option><option value="pdf">上传 PDF</option></select></div>
+<div class="form-group" id="singleArxivGroup"><label class="form-label">arXiv ID</label><input type="text" class="form-input" id="paperInput" placeholder="如 2602.03219"></div>
+<div class="form-group" id="batchArxivGroup" style="display:none"><label class="form-label">批量输入 (每行一个)</label><textarea class="form-textarea" id="batchInput" placeholder="2602.03219&#10;2503.14443"></textarea></div>
+<div class="form-group" id="pdfGroup" style="display:none"><label class="form-label">上传 PDF</label><label class="form-file"><input type="file" id="pdfFiles" multiple accept=".pdf" onchange="handleFileSelect(this)"><span>点击选择文件</span></label><div class="file-list" id="fileList"></div></div>
+<div class="form-group"><label class="form-label">分类</label><select class="form-select" id="paperCategory"><option value="benchmark">Benchmark</option><option value="long">长文本</option><option value="agent">Agent</option><option value="multimodal">多模态</option></select></div>
+</div>
+<div class="modal-footer"><button class="nav-btn" onclick="hideAddPaperModal()">取消</button><button class="nav-btn primary" onclick="addPaper()">添加</button></div>
+</div>
+</div>
+<script>
+let papers = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
+let currentPaper = papers.length > 0 ? papers[0] : null;
+let currentFilter = "all";
+let selectedFiles = [];
 
-    <div class="container">
-        <aside class="sidebar-left" id="sidebarLeft">
-            <div class="sidebar-header">
-                <input type="text" class="search-input" placeholder="搜索论文..." id="paperSearch" oninput="renderPaperList()">
-                <div class="filter-tags">
-                    <span class="filter-tag active" onclick="setFilter('all')">全部</span>
-                    <span class="filter-tag" onclick="setFilter('benchmark')">Benchmark</span>
-                    <span class="filter-tag" onclick="setFilter('long')">长文本</span>
-                    <span class="filter-tag" onclick="setFilter('agent')">Agent</span>
-                </div>
-            </div>
-            <div class="paper-list" id="paperList"></div>
-        </aside>
+function savePapers() { localStorage.setItem('paperLibrary', JSON.stringify(papers)); }
 
-        <button class="toggle-btn toggle-left" id="toggleLeft" onclick="toggleSidebar('left')">&#8249;</button>
+function renderPaperList() {
+    const search = document.getElementById("paperSearch").value.toLowerCase();
+    const filtered = papers.filter(p => {
+        const matchFilter = currentFilter === "all" || p.tags.includes(currentFilter);
+        const matchSearch = p.title.toLowerCase().includes(search) || (p.arxiv && p.arxiv.toLowerCase().includes(search));
+        return matchFilter && matchSearch;
+    });
+    if (filtered.length === 0) {
+        document.getElementById("paperList").innerHTML = '<div class="paper-empty">论文库为空<br>点击右上角"添加论文"开始</div>';
+    } else {
+        document.getElementById("paperList").innerHTML = filtered.map(p => 
+            `<div class="paper-item ${currentPaper && p.id===currentPaper.id?'active':''}" onclick="selectPaper(${p.id})">
+                <div class="paper-title">${p.title}</div>
+                <div class="paper-meta">${p.arxiv ? 'arXiv: '+p.arxiv : 'PDF'} | ${p.date}</div>
+                <div class="paper-tags">${p.tags.map(t=>`<span class="paper-tag">${t}</span>`).join('')}</div>
+                <div class="paper-actions"><span class="paper-action" onclick="event.stopPropagation();deletePaper(${p.id})">删除</span></div>
+            </div>`
+        ).join('');
+    }
+}
 
-        <main class="main-content">
-            <div class="mode-tabs">
-                <button class="mode-tab active" onclick="switchMode('reading')">阅读模式</button>
-                <button class="mode-tab" onclick="switchMode('analysis')">分析报告</button>
-            </div>
-            <div class="main-scroll">
-                <div id="readingMode">
-                    <div class="reading-container">
-                        <div class="reading-pane"><div class="pane-header">原文</div><div class="pane-content" id="originalContent"></div></div>
-                        <div class="reading-pane"><div class="pane-header">译文</div><div class="pane-content" id="translatedContent"></div></div>
-                    </div>
-                </div>
-                <div id="analysisMode" style="display:none;">
-                    <div class="analysis-header"><h1 class="analysis-title" id="analysisTitle"></h1><p class="analysis-meta" id="analysisMeta"></p></div>
-                    <div id="analysisContent"></div>
-                </div>
-            </div>
-        </main>
+function selectPaper(id) {
+    currentPaper = papers.find(p=>p.id===id);
+    renderPaperList();
+    updateContent();
+    document.getElementById('translatedContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">点击上方"翻译"按钮获取中文翻译</p>';
+    document.getElementById('analysisContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"精读"按钮生成深度分析报告</p>';
+}
 
-        <button class="toggle-btn toggle-right" id="toggleRight" onclick="toggleSidebar('right')">&#8250;</button>
+function updateContent() {
+    if (!currentPaper) {
+        document.getElementById("originalContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">请添加论文</p>';
+        document.getElementById("analysisTitle").textContent = '';
+        return;
+    }
+    const original = currentPaper.original || `<h1>${currentPaper.title}</h1><p>${currentPaper.abstract || '点击"翻译"获取全文翻译'}</p>`;
+    document.getElementById("originalContent").innerHTML = original;
+    document.getElementById("analysisTitle").textContent = currentPaper.title;
+    document.getElementById("analysisMeta").textContent = currentPaper.arxiv ? 'arXiv: '+currentPaper.arxiv+' | '+currentPaper.date : currentPaper.date;
+}
 
-        <aside class="sidebar-right" id="sidebarRight">
-            <div class="chat-header"><h3 class="chat-title">Agent 对话</h3></div>
-            <div class="quick-questions">
-                <button class="quick-btn" onclick="askQuestion(this)">核心创新是什么？</button>
-                <button class="quick-btn" onclick="askQuestion(this)">总结实验结果</button>
-                <button class="quick-btn" onclick="askQuestion(this)">解释算法流程</button>
-            </div>
-            <div class="chat-messages" id="chatMessages"><div class="chat-bubble">你好！我是论文分析助手。</div></div>
-            <div class="chat-input-area">
-                <div class="chat-input-wrapper">
-                    <input type="text" class="chat-input" id="chatInput" placeholder="输入问题..." onkeypress="if(event.key==='Enter')sendMessage()">
-                    <button class="send-btn" onclick="sendMessage()">发送</button>
-                </div>
-            </div>
-        </aside>
-    </div>
+function translatePaper() {
+    if (!currentPaper) return;
+    const btn = document.getElementById('translateBtn');
+    btn.innerHTML = '<span class="loading"></span> 翻译中...';
+    setTimeout(() => {
+        const translated = currentPaper.translated || `<h1>${currentPaper.title}</h1><h2>摘要</h2><p>这是一篇关于${currentPaper.title}的学术论文。全文翻译功能需要后端API支持，这里是模拟演示。</p><h2>1. 引言</h2><p>本文研究了${currentPaper.title}相关的主题。</p>`;
+        currentPaper.translated = translated;
+        savePapers();
+        document.getElementById('translatedContent').innerHTML = translated;
+        btn.textContent = '翻译';
+    }, 1500);
+}
 
-    <nav class="mobile-nav"><div class="mobile-nav-items"><div class="mobile-item active"><span class="mobile-icon">1</span><span>论文库</span></div><div class="mobile-item"><span class="mobile-icon">2</span><span>阅读</span></div><div class="mobile-item"><span class="mobile-icon">3</span><span>分析</span></div><div class="mobile-item"><span class="mobile-icon">4</span><span>问答</span></div></div></nav>
+function deepRead() {
+    if (!currentPaper) return;
+    const btn = document.getElementById('readBtn');
+    btn.innerHTML = '<span class="loading"></span> 分析中...';
+    setTimeout(() => {
+        const analysis = `<div class="analysis-section"><h3 class="section-title"><span class="section-dot" style="background:var(--blue)"></span>1. 研究动机</h3><ul class="section-list"><li><strong>研究问题</strong>：${currentPaper.title} 解决的核心问题</li><li><strong>研究背景</strong>：相关领域的研究现状与挑战</li><li><strong>现有局限</strong>：当前方法存在的不足</li></ul></div><div class="analysis-section"><h3 class="section-title"><span class="section-dot" style="background:var(--orange)"></span>2. 核心思想</h3><ul class="section-list"><li><strong>核心贡献</strong>：论文的主要贡献点</li><li><strong>创新点</strong>：相比现有方法的改进</li><li><strong>方法</strong>：提出的方法概述</li></ul></div><div class="dimension-cards"><div class="dimension-card blue"><div class="dimension-header"><div class="dimension-icon">1</div><span class="dimension-title">创新性</span></div><div class="dimension-content">评估论文在方法论上的创新程度</div><div class="dimension-score"><span class="score-badge">4</span><span class="score-label">4/5</span></div></div><div class="dimension-card orange"><div class="dimension-header"><div class="dimension-icon">2</div><span class="dimension-title">完整性</span></div><div class="dimension-content">评估实验设计的完整性</div><div class="dimension-score"><span class="score-badge">3</span><span class="score-label">3/5</span></div></div><div class="dimension-card green"><div class="dimension-header"><div class="dimension-icon">3</div><span class="dimension-title">写作</span></div><div class="dimension-content">评估论文写作质量</div><div class="dimension-score"><span class="score-badge">4</span><span class="score-label">4/5</span></div></div></div>`;
+        currentPaper.analysis = analysis;
+        savePapers();
+        document.getElementById('analysisContent').innerHTML = analysis;
+        btn.textContent = '精读';
+    }, 2000);
+}
 
-    <div class="modal-overlay" id="addPaperModal">
-        <div class="modal">
-            <div class="modal-header"><span class="modal-title">添加论文</span><span class="modal-close" onclick="hideAddPaperModal()">x</span></div>
-            <div class="modal-body">
-                <div class="form-group"><label class="form-label">输入方式</label><select class="form-select" id="inputType" onchange="toggleInputMethod()"><option value="arxiv">arXiv ID (单个)</option><option value="arxiv-batch">arXiv ID (批量)</option><option value="url">arXiv URL</option><option value="pdf">上传 PDF 文件</option><option value="folder">选择文件夹</option></select></div>
-                <div class="form-group" id="singleArxivGroup"><label class="form-label">arXiv ID</label><input type="text" class="form-input" id="paperInput" placeholder="如 2505.10610"></div>
-                <div class="form-group" id="batchArxivGroup" style="display:none"><label class="form-label">批量输入 (每行一个)</label><textarea class="form-textarea" id="batchInput" placeholder="2505.10610&#10;2503.14443"></textarea></div>
-                <div class="form-group" id="pdfGroup" style="display:none"><label class="form-label">上传 PDF</label><label class="form-file"><input type="file" id="pdfFiles" multiple accept=".pdf" onchange="handleFileSelect(this)"><span>点击选择文件</span></label><div class="file-list" id="fileList"></div></div>
-                <div class="form-group" id="folderGroup" style="display:none"><label class="form-label">文件夹路径</label><input type="text" class="form-input" id="folderInput" placeholder="/path/to/papers"></div>
-                <div class="form-group"><label class="form-label">分类</label><select class="form-select" id="paperCategory"><option value="benchmark">Benchmark</option><option value="long">长文本</option><option value="agent">Agent</option><option value="multimodal">多模态</option></select></div>
-            </div>
-            <div class="modal-footer"><button class="nav-btn" onclick="hideAddPaperModal()">取消</button><button class="nav-btn primary" onclick="addPaper()">添加</button></div>
-        </div>
-    </div>
+function deletePaper(id) {
+    papers = papers.filter(p=>p.id!==id);
+    currentPaper = papers.length > 0 ? papers[0] : null;
+    savePapers();
+    renderPaperList();
+    updateContent();
+}
 
-    <script>
-        const papers = [
-            {id:1,title:"Envisioning Beyond the Pixels",arxiv:"2505.10610",date:"2025-02-18",tags:["benchmark"],abstract:"We present RISEBench...",translated:"我们提出RISEBench..."},
-            {id:2,title:"MMLongBench",arxiv:"2503.14443",date:"2025-02-15",tags:["long","benchmark"],abstract:"MMLongBench...",translated:"MMLongBench评估..."},
-            {id:3,title:"Embodied Agent Interface",arxiv:"2507.09063",date:"2025-02-10",tags:["agent"],abstract:"We propose...",translated:"我们提出..."},
-            {id:4,title:"SWE-bench",arxiv:"2512.06915",date:"2024-12-01",tags:["benchmark","agent"],abstract:"SWE-bench...",translated:"SWE-bench评估..."},
-        ];
-        let currentPaper = papers[0];
-        let currentFilter = "all";
-        let selectedFiles = [];
-
-        const paperContents = {
-            1: {original:"<h1>Envisioning Beyond the Pixels</h1><h2>Abstract</h2><p>We present RISEBench, a comprehensive benchmark...</p>",translated:"<h1>超越像素的想象</h1><h2>摘要</h2><p>我们提出了RISEBench，一个综合基准...</p>"}
-        };
-
-        function renderPaperList() {
-            const search = document.getElementById("paperSearch").value.toLowerCase();
-            const filtered = papers.filter(p => {
-                const matchFilter = currentFilter === "all" || p.tags.includes(currentFilter);
-                const matchSearch = p.title.toLowerCase().includes(search) || p.arxiv.includes(search);
-                return matchFilter && matchSearch;
-            });
-            document.getElementById("paperList").innerHTML = filtered.map(p => 
-                `<div class="paper-item ${p.id===currentPaper.id?'active':''}" onclick="selectPaper(${p.id})">
-                    <div class="paper-title">${p.title}</div>
-                    <div class="paper-meta">arXiv: ${p.arxiv} | ${p.date}</div>
-                    <div class="paper-tags">${p.tags.map(t=>`<span class="paper-tag">${t}</span>`).join('')}</div>
-                </div>`
-            ).join('');
-        }
-
-        function selectPaper(id) {
-            currentPaper = papers.find(p=>p.id===id);
-            renderPaperList();
-            updateContent();
-        }
-
-        function updateContent() {
-            const c = paperContents[currentPaper.id]||{original:`<h1>${currentPaper.title}</h1><p>${currentPaper.abstract}</p>`,translated:`<h1>${currentPaper.title}</h1><p>${currentPaper.translated}</p>`};
-            document.getElementById("originalContent").innerHTML = c.original;
-            document.getElementById("translatedContent").innerHTML = c.translated;
-            document.getElementById("analysisTitle").textContent = currentPaper.title;
-            document.getElementById("analysisMeta").textContent = `arXiv: ${currentPaper.arxiv} | ${currentPaper.date}`;
-            document.getElementById("analysisContent").innerHTML = `
-                <div class="analysis-section"><h3 class="section-title"><span class="section-dot" style="background:var(--blue)"></span>1. 研究动机</h3><ul class="section-list"><li>研究问题：${currentPaper.title}中的核心问题</li><li>研究背景：相关领域现状</li></ul></div>
-                <div class="dimension-cards">
-                    <div class="dimension-card blue"><div class="dimension-header"><div class="dimension-icon">1</div><span class="dimension-title">创新性</span></div><div class="dimension-content">评估创新程度</div><div class="dimension-score"><span class="score-badge">4</span><span class="score-label">4/5</span></div></div>
-                    <div class="dimension-card orange"><div class="dimension-header"><div class="dimension-icon">2</div><span class="dimension-title">完整性</span></div><div class="dimension-content">评估实验完整性</div><div class="dimension-score"><span class="score-badge">3</span><span class="score-label">3/5</span></div></div>
-                    <div class="dimension-card green"><div class="dimension-header"><div class="dimension-icon">3</div><span class="dimension-title">写作</span></div><div class="dimension-content">评估写作质量</div><div class="dimension-score"><span class="score-badge">4</span><span class="score-label">4/5</span></div></div>
-                </div>`;
-        }
-
-        function setFilter(filter) {
-            currentFilter = filter;
-            document.querySelectorAll('.filter-tag').forEach(t=>t.classList.remove('active'));
-            event.target.classList.add('active');
-            renderPaperList();
-        }
-
-        function switchMode(mode) {
-            document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById('readingMode').style.display = mode==='reading'?'block':'none';
-            document.getElementById('analysisMode').style.display = mode==='analysis'?'block':'none';
-        }
-
-        function toggleSidebar(side) {
-            const left = document.getElementById('sidebarLeft');
-            const right = document.getElementById('sidebarRight');
-            const tl = document.getElementById('toggleLeft');
-            const tr = document.getElementById('toggleRight');
-            if(side==='left'){
-                left.classList.toggle('collapsed');
-                tl.classList.toggle('collapsed');
-                tl.innerHTML = left.classList.contains('collapsed')?'&#8250;':'&#8249;';
-            }else{
-                right.classList.toggle('collapsed');
-                tr.classList.toggle('collapsed');
-                tr.innerHTML = right.classList.contains('collapsed')?'&#8249;':'&#8250;';
-            }
-        }
-
-        function showAddPaperModal(){document.getElementById('addPaperModal').classList.add('show');}
-        function hideAddPaperModal(){document.getElementById('addPaperModal').classList.remove('show');selectedFiles=[];document.getElementById('fileList').innerHTML='';}
-
-        function toggleInputMethod(){
-            const t=document.getElementById('inputType').value;
-            document.getElementById('singleArxivGroup').style.display=t==='arxiv'?'block':'none';
-            document.getElementById('batchArxivGroup').style.display=t==='arxiv-batch'?'block':'none';
-            document.getElementById('pdfGroup').style.display=t==='pdf'?'block':'none';
-            document.getElementById('folderGroup').style.display=t==='folder'?'block':'none';
-        }
-
-        function handleFileSelect(input){
-            for(let i=0;i<input.files.length;i++) selectedFiles.push(input.files[i].name);
-            renderFileList();
-        }
-
-        function renderFileList(){
-            document.getElementById('fileList').innerHTML = selectedFiles.map((f,i)=>`<div class="file-item"><span>${f}</span><span class="file-remove" onclick="selectedFiles.splice(${i},1);renderFileList()">x</span></div>`).join('');
-        }
-
-        function addPaper(){
-            const type=document.getElementById('inputType').value;
-            let newPapers=[];
-            if(type==='arxiv'){
-                const id=document.getElementById('paperInput').value;
-                if(id) newPapers.push({id:papers.length+1,title:"论文 "+id,arxiv:id,date:new Date().toISOString().split('T')[0],tags:["benchmark"],abstract:"",translated:""});
-            }else if(type==='arxiv-batch'){
-                const ids=document.getElementById('batchInput').value.split('\n').filter(x=>x.trim());
-                ids.forEach((id,i)=>newPapers.push({id:papers.length+i+1,title:"论文 "+id,arxiv:id.trim(),date:new Date().toISOString().split('T')[0],tags:["benchmark"],abstract:"",translated:""}));
-            }else if(type==='pdf'){
-                selectedFiles.forEach((f,i)=>newPapers.push({id:papers.length+i+1,title:f.replace('.pdf',''),arxiv:"PDF",date:new Date().toISOString().split('T')[0],tags:["benchmark"],abstract:"",translated:""}));
-            }
-            papers.unshift(...newPapers);
-            renderPaperList();
-            hideAddPaperModal();
-        }
-
-        function askQuestion(btn){
-            document.getElementById('chatInput').value=btn.textContent;
-            sendMessage();
-        }
-
-        function sendMessage(){
-            const input=document.getElementById('chatInput');
-            const msg=input.value.trim();
-            if(!msg)return;
-            const m=document.getElementById('chatMessages');
-            m.innerHTML+=`<div class="chat-bubble user">${msg}</div><div class="chat-bubble">正在分析...</div>`;
-            m.scrollTop=m.scrollHeight;
-            input.value='';
-        }
-
+function clearAllPapers() {
+    if(confirm('确定清空所有论文？')) {
+        papers = [];
+        currentPaper = null;
+        savePapers();
         renderPaperList();
         updateContent();
-    </script>
+    }
+}
+
+function setFilter(filter) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-tag').forEach(t=>t.classList.remove('active'));
+    event.target.classList.add('active');
+    renderPaperList();
+}
+
+function switchMode(mode) {
+    document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('readingMode').style.display = mode==='reading'?'block':'none';
+    document.getElementById('analysisMode').style.display = mode==='analysis'?'block':'none';
+}
+
+function toggleSidebar(side) {
+    const left = document.getElementById('sidebarLeft');
+    const right = document.getElementById('sidebarRight');
+    const tl = document.getElementById('toggleLeft');
+    const tr = document.getElementById('toggleRight');
+    if(side==='left'){left.classList.toggle('collapsed');tl.classList.toggle('collapsed');tl.innerHTML = left.classList.contains('collapsed')?'&#8250;':'&#8249;';}
+    else{right.classList.toggle('collapsed');tr.classList.toggle('collapsed');tr.innerHTML = right.classList.contains('collapsed')?'&#8249;':'&#8250;';}
+}
+
+function showAddPaperModal(){document.getElementById('addPaperModal').classList.add('show');}
+function hideAddPaperModal(){document.getElementById('addPaperModal').classList.remove('show');selectedFiles=[];document.getElementById('fileList').innerHTML='';}
+
+function toggleInputMethod(){
+    const t=document.getElementById('inputType').value;
+    document.getElementById('singleArxivGroup').style.display=t==='arxiv'?'block':'none';
+    document.getElementById('batchArxivGroup').style.display=t==='arxiv-batch'?'block':'none';
+    document.getElementById('pdfGroup').style.display=t==='pdf'?'block':'none';
+}
+
+function handleFileSelect(input){
+    for(let i=0;i<input.files.length;i++) selectedFiles.push(input.files[i].name);
+    renderFileList();
+}
+function renderFileList(){
+    document.getElementById('fileList').innerHTML = selectedFiles.map((f,i)=>`<div class="file-item"><span>${f}</span><span class="file-remove" onclick="selectedFiles.splice(${i},1);renderFileList()">x</span></div>`).join('');
+}
+
+function addPaper(){
+    const type=document.getElementById('inputType').value;
+    const category=document.getElementById('paperCategory').value;
+    let newPapers=[];
+    let newId = papers.length > 0 ? Math.max(...papers.map(p=>p.id)) + 1 : 1;
+    if(type==='arxiv'){
+        const id=document.getElementById('paperInput').value.trim();
+        if(id) newPapers.push({id:newId,title:"论文 "+id,arxiv:id,date:new Date().toISOString().split('T')[0],tags:[category],abstract:"",translated:"",original:"",analysis:""});
+    }else if(type==='arxiv-batch'){
+        const ids=document.getElementById('batchInput').value.split('\n').filter(x=>x.trim());
+        ids.forEach((id,i)=>newPapers.push({id:newId+i,title:"论文 "+id.trim(),arxiv:id.trim(),date:new Date().toISOString().split('T')[0],tags:[category],abstract:"",translated:"",original:"",analysis:""}));
+    }else if(type==='pdf'){
+        selectedFiles.forEach((f,i)=>newPapers.push({id:newId+i,title:f.replace('.pdf',''),arxiv:"PDF",date:new Date().toISOString().split('T')[0],tags:[category],abstract:"",translated:"",original:"",analysis:""}));
+    }
+    papers.unshift(...newPapers);
+    currentPaper = papers[0];
+    savePapers();
+    renderPaperList();
+    updateContent();
+    hideAddPaperModal();
+}
+
+function askQuestion(btn){document.getElementById('chatInput').value=btn.textContent;sendMessage();}
+function sendMessage(){
+    const input=document.getElementById('chatInput');
+    const msg=input.value.trim();
+    if(!msg)return;
+    const m=document.getElementById('chatMessages');
+    m.innerHTML+=`<div class="chat-bubble user">${msg}</div><div class="chat-bubble">正在分析...</div>`;
+    m.scrollTop=m.scrollHeight;
+    input.value='';
+}
+
+renderPaperList();
+updateContent();
+</script>
 </body>
 </html>
