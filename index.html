@@ -163,15 +163,148 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .paper-action2:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(155,126,217,0.5)}
 </style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js">
+
+function downloadPaper() {
+    if (!currentPaper) { alert('请先选择一篇论文'); return; }
+    var data = {
+        title: currentPaper.title,
+        arxiv: currentPaper.arxiv,
+        date: currentPaper.date,
+        tags: currentPaper.tags,
+        abstract: currentPaper.abstract,
+        original: currentPaper.original,
+        translated: currentPaper.translated,
+        analysis: currentPaper.analysis,
+        peerReview: currentPaper.peerReview,
+        exportedAt: new Date().toISOString()
+    };
+    var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = (currentPaper.title || currentPaper.arxiv || 'paper') + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function showImportModal() {
+    document.getElementById('importModal').style.display = 'flex';
+}
+
+function hideImportModal() {
+    document.getElementById('importModal').style.display = 'none';
+}
+
+function importPaper() {
+    var file = document.getElementById('importFile').files[0];
+    if (!file) { alert('请选择文件'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            var data = JSON.parse(e.target.result);
+            var papersList = JSON.parse(localStorage.getItem('papers') || '[]');
+            var newId = papersList.length > 0 ? Math.max.apply(null, papersList.map(function(p){return p.id;})) + 1 : 1;
+            papersList.unshift({
+                id: newId,
+                title: data.title || '未知论文',
+                arxiv: data.arxiv || '',
+                date: data.date || new Date().toISOString().split('T')[0],
+                tags: data.tags || [],
+                abstract: data.abstract || '',
+                original: data.original || '',
+                translated: data.translated || '',
+                analysis: data.analysis || '',
+                peerReview: data.peerReview || '',
+                parsed: !!data.original
+            });
+            localStorage.setItem('papers', JSON.stringify(papersList));
+            papers = papersList;
+            currentPaper = papers[0];
+            renderPaperList();
+            updateContent();
+            hideImportModal();
+            alert('导入成功: ' + data.title);
+        } catch(err) { alert('导入失败: ' + err.message); }
+    };
+    reader.readAsText(file);
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js">
+
+function downloadPaper() {
+    if (!currentPaper) { alert('请先选择一篇论文'); return; }
+    var data = {
+        title: currentPaper.title,
+        arxiv: currentPaper.arxiv,
+        date: currentPaper.date,
+        tags: currentPaper.tags,
+        abstract: currentPaper.abstract,
+        original: currentPaper.original,
+        translated: currentPaper.translated,
+        analysis: currentPaper.analysis,
+        peerReview: currentPaper.peerReview,
+        exportedAt: new Date().toISOString()
+    };
+    var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = (currentPaper.title || currentPaper.arxiv || 'paper') + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function showImportModal() {
+    document.getElementById('importModal').style.display = 'flex';
+}
+
+function hideImportModal() {
+    document.getElementById('importModal').style.display = 'none';
+}
+
+function importPaper() {
+    var file = document.getElementById('importFile').files[0];
+    if (!file) { alert('请选择文件'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            var data = JSON.parse(e.target.result);
+            var papersList = JSON.parse(localStorage.getItem('papers') || '[]');
+            var newId = papersList.length > 0 ? Math.max.apply(null, papersList.map(function(p){return p.id;})) + 1 : 1;
+            papersList.unshift({
+                id: newId,
+                title: data.title || '未知论文',
+                arxiv: data.arxiv || '',
+                date: data.date || new Date().toISOString().split('T')[0],
+                tags: data.tags || [],
+                abstract: data.abstract || '',
+                original: data.original || '',
+                translated: data.translated || '',
+                analysis: data.analysis || '',
+                peerReview: data.peerReview || '',
+                parsed: !!data.original
+            });
+            localStorage.setItem('papers', JSON.stringify(papersList));
+            papers = papersList;
+            currentPaper = papers[0];
+            renderPaperList();
+            updateContent();
+            hideImportModal();
+            alert('导入成功: ' + data.title);
+        } catch(err) { alert('导入失败: ' + err.message); }
+    };
+    reader.readAsText(file);
+}
+</script>
 </head>
 <body>
 <nav class="top-nav">
 <div class="nav-left"><span class="nav-logo">Paper Analyzer</span>
 <div class="nav-tabs"><button class="nav-tab active">论文库</button><button class="nav-tab">阅读模式</button><button class="nav-tab">分析报告</button><button class="nav-tab">同行评审</button><button class="nav-tab">语义检索</button></div>
 </div>
-<button class="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button><div class="nav-right"><button class="nav-btn" onclick="showAddPaperModal()">+ 添加论文</button><button class="nav-btn" onclick="clearAllPapers()">清空</button><button class="nav-btn" onclick="showApiSettings()">API</button></div>
+<button class="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button><div class="nav-right"><button class="nav-btn" onclick="showAddPaperModal()">+ 添加论文</button><button class="nav-btn" onclick="clearAllPapers()">清空</button><button class="nav-btn" onclick="showApiSettings()">API</button><button class="nav-btn" onclick="downloadPaper()">导出</button>
+<button class="nav-btn" onclick="showImportModal()">导入</button></div>
 </nav>
 <div class="overlay" id="mobileOverlay" onclick="toggleMobileSidebar()"></div><div class="container">
 <aside class="sidebar-left" id="sidebarLeft">
@@ -297,7 +430,11 @@ function updateContent() {
     }
     if (currentPaper.parsed && currentPaper.original) {
         document.getElementById("originalContent").innerHTML = currentPaper.original;
-        document.getElementById("translatedContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"翻译"获取中文翻译</p>';
+        if (currentPaper.translated) {
+            document.getElementById("translatedContent").innerHTML = currentPaper.translated;
+        } else {
+            document.getElementById("translatedContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"翻译"获取中文翻译</p>';
+        }
     } else {
         document.getElementById("originalContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">请点击"解析"按钮解析论文</p>';
     }
@@ -305,6 +442,15 @@ function updateContent() {
     document.getElementById("analysisMeta").innerHTML = currentPaper.arxiv ? 'arXiv: ' + currentPaper.arxiv + ' | ' + currentPaper.date : currentPaper.date;
     document.getElementById("peerReviewTitle").innerHTML = currentPaper.title || '';
     document.getElementById("peerReviewMeta").innerHTML = currentPaper.arxiv ? 'arXiv: ' + currentPaper.arxiv + ' | ' + currentPaper.date : (currentPaper.date || '');
+    
+    // Display saved analysis
+    if (currentPaper.analysis) {
+        document.getElementById('analysisContent').innerHTML = '<div class="analysis-section">' + currentPaper.analysis + '</div>';
+    }
+    // Display saved peer review
+    if (currentPaper.peerReview) {
+        document.getElementById('peerReviewContent').innerHTML = '<div class="analysis-section">' + currentPaper.peerReview + '</div>';
+    }
 }
 
 function parsePaper() {
@@ -400,6 +546,7 @@ function translatePaper() {
     .then(function(d){
         if(d.success && d.text){
             currentPaper.translated = d.text;
+            currentPaper.abstract = currentPaper.abstract || '';
             savePapers();
             document.getElementById('translatedContent').innerHTML = d.text;
         } else {
@@ -543,12 +690,12 @@ function addPaper(){
     
     if(type === 'arxiv'){
         var id = document.getElementById('paperInput').value.trim();
-        if(id) newPapers.push({id:newId,title:"论文 " + id,arxiv:id,date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",parsed:false});
+        if(id) newPapers.push({id:newId,title:"论文 " + id,arxiv:id,date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});
     } else if(type === 'arxiv-batch'){
         var ids = document.getElementById('batchInput').value.split('\n').filter(function(x){return x.trim();});
-        ids.forEach(function(id,i){newPapers.push({id:newId+i,title:"论文 " + id.trim(),arxiv:id.trim(),date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",parsed:false});});
+        ids.forEach(function(id,i){newPapers.push({id:newId+i,title:"论文 " + id.trim(),arxiv:id.trim(),date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});});
     } else if(type === 'folder' || type === 'pdf'){
-        selectedFiles.forEach(function(f,i){newPapers.push({id:newId+i,title:f.replace('.pdf',''),arxiv:"PDF",date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",parsed:false});});
+        selectedFiles.forEach(function(f,i){newPapers.push({id:newId+i,title:f.replace('.pdf',''),arxiv:"PDF",date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});});
     }
     
     papers.unshift.apply(papers, newPapers);
@@ -719,6 +866,8 @@ function generateAnalysis() {
             .then(function(d2){
                 if(d2.success && d2.text){
                     document.getElementById('analysisContent').innerHTML = '<div class="analysis-section">'+d2.text+'</div>';
+                    currentPaper.analysis = d2.text;
+                    savePapers();
                 } else {
                     document.getElementById('analysisContent').innerHTML = '<div class="analysis-section">'+d.text+'</div>';
                 }
@@ -735,6 +884,72 @@ function generateAnalysis() {
     })
     .catch(function(e){alert('网络错误: '+e.message);btn.innerHTML='生成分析报告';btn.disabled=false;});
 }
+
+
+function downloadPaper() {
+    if (!currentPaper) { alert('请先选择一篇论文'); return; }
+    var data = {
+        title: currentPaper.title,
+        arxiv: currentPaper.arxiv,
+        date: currentPaper.date,
+        tags: currentPaper.tags,
+        abstract: currentPaper.abstract,
+        original: currentPaper.original,
+        translated: currentPaper.translated,
+        analysis: currentPaper.analysis,
+        peerReview: currentPaper.peerReview,
+        exportedAt: new Date().toISOString()
+    };
+    var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = (currentPaper.title || currentPaper.arxiv || 'paper') + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function showImportModal() {
+    document.getElementById('importModal').style.display = 'flex';
+}
+
+function hideImportModal() {
+    document.getElementById('importModal').style.display = 'none';
+}
+
+function importPaper() {
+    var file = document.getElementById('importFile').files[0];
+    if (!file) { alert('请选择文件'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            var data = JSON.parse(e.target.result);
+            var papersList = JSON.parse(localStorage.getItem('papers') || '[]');
+            var newId = papersList.length > 0 ? Math.max.apply(null, papersList.map(function(p){return p.id;})) + 1 : 1;
+            papersList.unshift({
+                id: newId,
+                title: data.title || '未知论文',
+                arxiv: data.arxiv || '',
+                date: data.date || new Date().toISOString().split('T')[0],
+                tags: data.tags || [],
+                abstract: data.abstract || '',
+                original: data.original || '',
+                translated: data.translated || '',
+                analysis: data.analysis || '',
+                peerReview: data.peerReview || '',
+                parsed: !!data.original
+            });
+            localStorage.setItem('papers', JSON.stringify(papersList));
+            papers = papersList;
+            currentPaper = papers[0];
+            renderPaperList();
+            updateContent();
+            hideImportModal();
+            alert('导入成功: ' + data.title);
+        } catch(err) { alert('导入失败: ' + err.message); }
+    };
+    reader.readAsText(file);
+}
 </script>
 <script>document.addEventListener("DOMContentLoaded", function() {
     if (typeof renderMathInElement !== 'undefined') {
@@ -746,6 +961,79 @@ function generateAnalysis() {
             throwOnError: false
         });
     }
-});</script>
+});
+
+function downloadPaper() {
+    if (!currentPaper) { alert('请先选择一篇论文'); return; }
+    var data = {
+        title: currentPaper.title,
+        arxiv: currentPaper.arxiv,
+        date: currentPaper.date,
+        tags: currentPaper.tags,
+        abstract: currentPaper.abstract,
+        original: currentPaper.original,
+        translated: currentPaper.translated,
+        analysis: currentPaper.analysis,
+        peerReview: currentPaper.peerReview,
+        exportedAt: new Date().toISOString()
+    };
+    var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = (currentPaper.title || currentPaper.arxiv || 'paper') + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function showImportModal() {
+    document.getElementById('importModal').style.display = 'flex';
+}
+
+function hideImportModal() {
+    document.getElementById('importModal').style.display = 'none';
+}
+
+function importPaper() {
+    var file = document.getElementById('importFile').files[0];
+    if (!file) { alert('请选择文件'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            var data = JSON.parse(e.target.result);
+            var papersList = JSON.parse(localStorage.getItem('papers') || '[]');
+            var newId = papersList.length > 0 ? Math.max.apply(null, papersList.map(function(p){return p.id;})) + 1 : 1;
+            papersList.unshift({
+                id: newId,
+                title: data.title || '未知论文',
+                arxiv: data.arxiv || '',
+                date: data.date || new Date().toISOString().split('T')[0],
+                tags: data.tags || [],
+                abstract: data.abstract || '',
+                original: data.original || '',
+                translated: data.translated || '',
+                analysis: data.analysis || '',
+                peerReview: data.peerReview || '',
+                parsed: !!data.original
+            });
+            localStorage.setItem('papers', JSON.stringify(papersList));
+            papers = papersList;
+            currentPaper = papers[0];
+            renderPaperList();
+            updateContent();
+            hideImportModal();
+            alert('导入成功: ' + data.title);
+        } catch(err) { alert('导入失败: ' + err.message); }
+    };
+    reader.readAsText(file);
+}
+</script>
+
+<div class="modal-overlay" id="importModal">
+<div class="modal"><div class="modal-header"><span class="modal-title">导入论文</span><span class="modal-close" onclick="hideImportModal()">x</span></div>
+<div class="modal-body">
+<div class="form-group"><label class="form-label">选择导入文件 (.json)</label><label class="form-file"><input type="file" id="importFile" accept=".json"><span>点击选择文件</span></label></div>
+<div class="file-list" id="importList"></div>
+</div><div class="modal-footer"><button class="paper-action2" onclick="importPaper()">导入</button></div></div></div>
 </body>
 </html>
