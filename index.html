@@ -273,28 +273,73 @@ function parsePaper() {
     if (!currentPaper) return;
     var btn = document.getElementById('parseBtn');
     btn.innerHTML = '<span class="loading"></span> 解析中...';
-    setTimeout(function() {
-        var parsedContent = '<h1>' + currentPaper.title + '</h1>' +
-            '<h2>摘要</h2>' +
-            '<p>这是论文的摘要内容。点击"解析"后会通过 MinerU 工具解析论文 PDF 并提取可读的 Markdown 格式内容。</p>' +
-            '<h2>1. 引言</h2>' +
-            '<p>本文研究了相关领域的重要问题，提出了新的方法和解决方案。</p>' +
-            '<h2>2. 相关工作</h2>' +
-            '<p>介绍现有的研究和方法，分析其优缺点。</p>' +
-            '<h2>3. 方法</h2>' +
-            '<p>详细描述提出的方法和技术方案。</p>' +
-            '<h2>4. 实验</h2>' +
-            '<p>展示实验设置和结果分析。</p>' +
-            '<h2>5. 结论</h2>' +
-            '<p>总结本文的贡献和未来工作。</p>';
-        currentPaper.original = parsedContent;
-        currentPaper.parsed = true;
-        currentPaper.abstract = '这是论文的摘要内容...';
+    
+    // 调用后端 API 解析论文
+    var apiUrl = 'http://localhost:5001/api/parse';
+    var payload = {
+        sourceType: currentPaper.arxiv ? 'arxiv' : 'url',
+        source: currentPaper.arxiv || currentPaper.pdfUrl
+    };
+    
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
+    .then(function(res){return res.json();})
+    .then(function(data){
+        if(data.success && data.data){
+            // 解析成功，提取内容
+            var content = data.data.data || data.data;
+            var markdown = content.markdown || content.text || '';
+            
+            // 转换为 HTML
+            var htmlContent = convertMarkdownToHtml(markdown);
+            currentPaper.original = htmlContent;
+            currentPaper.parsed = true;
+            currentPaper.abstract = content.abstract || '';
+        } else {
+            // API 调用失败，使用模拟数据
+            console.error('解析失败:', data.error);
+            showParseError();
+        }
         savePapers();
-        document.getElementById('originalContent').innerHTML = parsedContent;
+        document.getElementById('originalContent').innerHTML = currentPaper.original;
         btn.textContent = '解析';
         renderPaperList();
-    }, 2000);
+    })
+    .catch(function(err){
+        console.error('API错误:', err);
+        showParseError();
+        btn.textContent = '解析';
+    });
+    
+    function showParseError() {
+        var parsedContent = '<h1>' + currentPaper.title + '</h1>' +
+            '<h2>摘要</h2>' +
+            '<p>API 调用失败，请确保后端服务正在运行。</p>' +
+            '<p>错误: ' + (data ? data.error : '网络错误') + '</p>' +
+            '<h2>1. 引言</h2>' +
+            '<p>本文研究了相关领域的重要问题。</p>';
+        currentPaper.original = parsedContent;
+        currentPaper.parsed = true;
+        savePapers();
+        document.getElementById('originalContent').innerHTML = parsedContent;
+    }
+}
+
+function convertMarkdownToHtml(markdown) {
+    // 简单的 Markdown 转 HTML
+    var html = markdown
+        .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/^- (.*$)/gm, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    return '<h1>' + currentPaper.title + '</h1><p>' + html + '</p>';
 }
 
 function translatePaper() {
