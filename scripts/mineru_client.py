@@ -107,21 +107,38 @@ def parse_url(pdf_url: str, token: Optional[str] = None, output_dir: Optional[st
                         zip_response = requests.get(zip_url, timeout=120)
                         
                         if zip_response.status_code == 200:
-                            # 提取 markdown
+                            # 提取 markdown 和图片
                             z = zipfile.ZipFile(io.BytesIO(zip_response.content))
                             
                             markdown_content = ""
                             for name in z.namelist():
                                 if name.endswith('.md'):
-                                    markdown_content = z.read(name).decode('utf-8')
+                                    markdown_content = z.read(name).decode('utf-8').replace(r'](images/', r'](/api/images/')
                                     break
                             
                             if not markdown_content:
                                 return {"success": False, "error": "ZIP中未找到Markdown文件"}
                             
-                            # 保存到文件
+                            # 提取 images 文件夹
+                            images_dir = None
                             if output_dir:
                                 os.makedirs(output_dir, exist_ok=True)
+                                images_dir = os.path.join(output_dir, 'images')
+                                if os.path.exists(images_dir):
+                                    import shutil
+                                    shutil.rmtree(images_dir)
+                                os.makedirs(images_dir, exist_ok=True)
+                                
+                                for name in z.namelist():
+                                    if name.startswith('images/') and not name.endswith('/'):
+                                        # 提取图片
+                                        img_data = z.read(name)
+                                        img_name = os.path.basename(name)
+                                        img_path = os.path.join(images_dir, img_name)
+                                        with open(img_path, 'wb') as f:
+                                            f.write(img_data)
+                                
+                                # 保存 markdown
                                 output_file = os.path.join(output_dir, "paper.md")
                                 with open(output_file, 'w', encoding='utf-8') as f:
                                     f.write(markdown_content)

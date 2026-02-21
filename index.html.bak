@@ -158,18 +158,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:40;display:none}
 .overlay.show{display:block}
 }
-
-.paper-action2{background:linear-gradient(135deg,#9B7ED9,#7B5DB8);color:#fff;border:none;padding:10px 24px;border-radius:20px;cursor:pointer;font-size:14px;font-weight:500;transition:all 0.3s;box-shadow:0 2px 8px rgba(155,126,217,0.3)}
-.paper-action2:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(155,126,217,0.5)}
 </style>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 </head>
 <body>
 <nav class="top-nav">
 <div class="nav-left"><span class="nav-logo">Paper Analyzer</span>
-<div class="nav-tabs"><button class="nav-tab active">论文库</button><button class="nav-tab">阅读模式</button><button class="nav-tab">分析报告</button><button class="nav-tab">同行评审</button><button class="nav-tab">语义检索</button></div>
+<div class="nav-tabs"><button class="nav-tab active">论文库</button><button class="nav-tab">阅读模式</button><button class="nav-tab">分析报告</button></div>
 </div>
 <button class="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button><div class="nav-right"><button class="nav-btn" onclick="showAddPaperModal()">+ 添加论文</button><button class="nav-btn" onclick="clearAllPapers()">清空</button><button class="nav-btn" onclick="showApiSettings()">API</button></div>
 </nav>
@@ -182,49 +176,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 </aside>
 <button class="toggle-btn toggle-left" id="toggleLeft" onclick="toggleSidebar('left')">&#8249;</button>
 <main class="main-content">
-<div class="mode-tabs"><button class="mode-tab active" onclick="switchMode('reading')">阅读模式</button><button class="mode-tab" onclick="switchMode('analysis')">分析报告</button><button class="mode-tab" onclick="switchMode('peerReview')">同行评审</button><button class="mode-tab" onclick="switchMode('semanticSearch')">语义检索</button></div>
+<div class="mode-tabs"><button class="mode-tab active" onclick="switchMode('reading')">阅读模式</button><button class="mode-tab" onclick="switchMode('analysis')">分析报告</button></div>
 <div class="main-scroll">
 <div id="readingMode">
 <div class="reading-container">
-<div class="reading-pane"><div class="pane-header"><span>原文</span><button class="paper-action2" onclick="parsePaper()" id="parseBtn">解析</button></div><div class="pane-content" id="originalContent"><p style="color:var(--text-muted);text-align:center;margin-top:40px">请先添加论文并解析</p></div></div>
-<div class="reading-pane"><div class="pane-header"><span>译文</span><button class="paper-action2" onclick="translatePaper()" id="translateBtn">翻译</button></div><div class="pane-content" id="translatedContent"><p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"解析"后获取原文，再点击"翻译"获取中文翻译</p></div></div>
+<div class="reading-pane"><div class="pane-header"><span>原文</span><button class="paper-action" onclick="parsePaper()" id="parseBtn">解析</button></div><div class="pane-content" id="originalContent"><p style="color:var(--text-muted);text-align:center;margin-top:40px">请先添加论文并解析</p></div></div>
+<div class="reading-pane"><div class="pane-header"><span>译文</span><button class="paper-action" onclick="translatePaper()" id="translateBtn">翻译</button></div><div class="pane-content" id="translatedContent"><p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"解析"后获取原文，再点击"翻译"获取中文翻译</p></div></div>
 </div>
 </div>
 <div id="analysisMode" style="display:none">
-<div class="analysis-header">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <h1 class="analysis-title" id="analysisTitle" style="margin:0"></h1>
-        <button class="paper-action2" id="analyzeBtn" onclick="generateAnalysis()">生成分析报告</button>
-    </div>
-    <p class="analysis-meta" id="analysisMeta"></p>
-</div>
+<div class="analysis-header"><h1 class="analysis-title" id="analysisTitle"></h1><p class="analysis-meta" id="analysisMeta"></p></div>
 <div id="analysisContent"><p style="color:var(--text-muted);text-align:center;margin-top:40px">解析论文后可生成深度分析报告</p></div>
 </div>
-
-<div id="peerReviewMode" style="display:none">
-<div class="analysis-header">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <h1 class="analysis-title" id="peerReviewTitle" style="margin:0"></h1>
-        <button class="paper-action2" id="peerReviewBtn" onclick="generatePeerReview()">生成同行评审</button>
-    </div>
-    <p class="analysis-meta" id="peerReviewMeta"></p>
 </div>
-<div id="peerReviewContent"><p style="color:var(--text-muted);text-align:center;margin-top:40px">解析论文后可生成同行评审</p></div>
-</div>
-
-<div id="semanticSearchMode" style="display:none">
-<div style="padding:20px">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-        <input type="text" id="searchInput" placeholder="输入关键词搜索相关论文..." style="flex:1;padding:10px 16px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);font-size:14px">
-        <button class="paper-action2" onclick="doSemanticSearch()">检索</button>
-    </div>
-    <p id="searchStats" style="font-size:12px;color:var(--text-muted);margin-bottom:12px"></p>
-</div>
-<div id="searchResults" style="padding:0 20px 20px;display:flex;flex-direction:column;gap:12px">
-    <p style="color:var(--text-muted);text-align:center;margin-top:40px">输入关键词搜索相关论文</p>
-</div>
-</div>
-
 </main>
 <button class="toggle-btn toggle-right" id="toggleRight" onclick="toggleSidebar('right')">&#8250;</button>
 <aside class="sidebar-right" id="sidebarRight">
@@ -303,23 +267,20 @@ function updateContent() {
     }
     document.getElementById("analysisTitle").innerHTML = currentPaper.title;
     document.getElementById("analysisMeta").innerHTML = currentPaper.arxiv ? 'arXiv: ' + currentPaper.arxiv + ' | ' + currentPaper.date : currentPaper.date;
-    document.getElementById("peerReviewTitle").innerHTML = currentPaper.title || '';
-    document.getElementById("peerReviewMeta").innerHTML = currentPaper.arxiv ? 'arXiv: ' + currentPaper.arxiv + ' | ' + currentPaper.date : (currentPaper.date || '');
 }
 
 function parsePaper() {
     if (!currentPaper) return;
     var btn = document.getElementById('parseBtn');
     btn.innerHTML = '<span class="loading"></span> 解析中...';
-    document.getElementById('originalContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在解析论文，请稍候...</p>';
     
-    var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001');
+    var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001') + '/api/parse';
     var payload = {
         sourceType: 'arxiv',
         source: currentPaper.arxiv
     };
     
-    fetch(apiUrl + '/api/parse', {
+    fetch(apiUrl, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(payload)
@@ -328,45 +289,26 @@ function parsePaper() {
     .then(function(data){
         if(data.success && data.data && data.data.markdown){
             var markdown = data.data.markdown;
+            var htmlContent = convertMarkdownToHtml(markdown);
+            
             currentPaper.title = data.data.title || currentPaper.title;
             currentPaper.abstract = data.data.abstract || '';
+            currentPaper.original = htmlContent;
+            currentPaper.parsed = true;
             
-            // Step 2: Convert to HTML with MiniMax
-            btn.innerHTML = '<span class="loading"></span> 格式转换中...';
-            fetch(apiUrl + '/api/convert', {
-                method: 'POST',
-                headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({markdown: markdown, title: currentPaper.title})
-            })
-            .then(function(r){return r.json();})
-            .then(function(d){
-                if(d.success && d.text){
-                    currentPaper.original = d.text;
-                    currentPaper.parsed = true;
-                    savePapers();
-                    document.getElementById('originalContent').innerHTML = d.text;
-                    document.getElementById('analysisTitle').innerHTML = currentPaper.title;
-                } else {
-                    alert('格式转换失败: ' + (d.error || '未知错误'));
-                    document.getElementById('originalContent').innerHTML = '<p style="color:var(--text-muted)">格式转换失败</p>';
-                }
-                btn.innerHTML = '解析';
-                renderPaperList();
-            })
-            .catch(function(e){
-                alert('网络错误: ' + e.message);
-                btn.innerHTML = '解析';
-            });
+            savePapers();
+            document.getElementById('originalContent').innerHTML = htmlContent;
+            document.getElementById('analysisTitle').innerHTML = currentPaper.title;
         } else {
             alert('解析失败: ' + (data.error || '未知错误'));
             document.getElementById('originalContent').innerHTML = '<p style="color:var(--text-muted)">解析失败，请重试</p>';
-            btn.innerHTML = '解析';
-            renderPaperList();
         }
+        btn.textContent = '解析';
+        renderPaperList();
     })
     .catch(function(err){
         alert('网络错误: ' + err.message);
-        btn.innerHTML = '解析';
+        btn.textContent = '解析';
     });
 }
 
@@ -386,32 +328,13 @@ function translatePaper() {
     if (!currentPaper || !currentPaper.parsed) { alert('请先解析论文'); return; }
     var btn = document.getElementById('translateBtn');
     btn.innerHTML = '<span class="loading"></span> 翻译中...';
-    document.getElementById('translatedContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在翻译论文，请稍候...</p>';
-    
-    var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001');
-    var htmlContent = currentPaper.original;
-    
-    fetch(apiUrl + '/api/translate', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({text: htmlContent, title: currentPaper.title})
-    })
-    .then(function(r){return r.json();})
-    .then(function(d){
-        if(d.success && d.text){
-            currentPaper.translated = d.text;
-            savePapers();
-            document.getElementById('translatedContent').innerHTML = d.text;
-        } else {
-            alert('翻译失败: ' + (d.error || '未知错误'));
-            document.getElementById('translatedContent').innerHTML = '<p style="color:var(--text-muted)">翻译失败</p>';
-        }
-        btn.innerHTML = '翻译';
-    })
-    .catch(function(e){
-        alert('网络错误: ' + e.message);
-        btn.innerHTML = '翻译';
-    });
+    setTimeout(function() {
+        var translated = currentPaper.translated || '<h1>' + currentPaper.title + '</h1><h2>摘要</h2><p>这是论文的中文翻译。</p><h2>1. 引言</h2><p>本文研究了相关主题。</p>';
+        currentPaper.translated = translated;
+        savePapers();
+        document.getElementById('translatedContent').innerHTML = translated;
+        btn.textContent = '翻译';
+    }, 1500);
 }
 
 function deletePaper(id) {
@@ -446,8 +369,6 @@ function switchMode(mode) {
     event.target.classList.add('active');
     document.getElementById('readingMode').style.display = mode === 'reading' ? 'block' : 'none';
     document.getElementById('analysisMode').style.display = mode === 'analysis' ? 'block' : 'none';
-    document.getElementById('peerReviewMode').style.display = mode === 'peerReview' ? 'block' : 'none';
-    document.getElementById('semanticSearchMode').style.display = mode === 'semanticSearch' ? 'block' : 'none';
 }
 
 function toggleSidebar(side) {
@@ -612,140 +533,6 @@ function mobileNav(tab){
         document.querySelectorAll('.mode-tab')[0].classList.remove('active');
     }
 }
-
-
-function generatePeerReview() {
-    if (!currentPaper || !currentPaper.parsed) { alert('请先解析论文'); return; }
-    var btn = document.getElementById('peerReviewBtn');
-    btn.innerHTML = '<span class="loading"></span> 评审中...';
-    btn.disabled = true;
-    var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001') + '/api/peerReview';
-    fetch(apiUrl, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:currentPaper.title, abstract:currentPaper.abstract, content:document.getElementById('originalContent').innerHTML})})
-    .then(function(r){return r.json();})
-    .then(function(d){
-        if(d.success && d.text){
-            document.getElementById('peerReviewContent').innerHTML = '<div class="analysis-section">'+d.text+'</div>';
-        } else {
-            alert('评审失败: '+(d.error||'未知'));
-        }
-        btn.innerHTML = '生成同行评审'; btn.disabled = false;
-    })
-    .catch(function(e){alert('网络错误: '+e.message);btn.innerHTML='生成同行评审';btn.disabled=false;});
-}
-
-function doSemanticSearch() {
-    var query = document.getElementById('searchInput').value.trim();
-    if (!query) { alert('请输入搜索关键词'); return; }
-    document.getElementById('searchStats').innerHTML = '正在搜索...';
-    document.getElementById('searchResults').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">搜索中，请稍候...</p>';
-    var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001') + '/api/semanticSearch';
-    fetch(apiUrl, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:query})})
-    .then(function(r){return r.json();})
-    .then(function(d){
-        if(d.success && d.papers){
-            var papers = d.papers;
-            document.getElementById('searchStats').innerHTML = '找到 ' + papers.length + ' 篇相关论文';
-            if(papers.length === 0) {
-                document.getElementById('searchResults').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">未找到相关论文</p>';
-                return;
-            }
-            var html = papers.map(function(p){
-                var sim = p.similarity ? Math.round(p.similarity * 100) + '%' : '';
-                return '<div style="background:var(--bg-secondary);border-radius:8px;padding:16px;cursor:pointer">' +
-                    '<div style="font-size:14px;font-weight:600;margin-bottom:8px">'+p.title+'</div>' +
-                    '<div style="font-size:12px;color:var(--text-muted)">'+(p.year||'')+' | '+(p.citationCount||0)+' citations'+(sim ? ' | 相似度: '+sim : '')+'</div>' +
-                    '<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">'+(p.abstract||'')+'</div>' +
-                    '<button class="paper-action" style="margin-top:12px;padding:6px 16px;font-size:12px" onclick="event.stopPropagation();importSearchPaper(\''+p.paperId+'\',\''+encodeURIComponent(p.title)+'\')">导入论文库</button>' +
-                    '</div>';
-            }).join('');
-            document.getElementById('searchResults').innerHTML = html;
-        } else {
-            document.getElementById('searchStats').innerHTML = '搜索失败';
-            document.getElementById('searchResults').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">搜索失败: '+(d.error||'未知错误')+'</p>';
-        }
-    })
-    .catch(function(e){
-        document.getElementById('searchStats').innerHTML = '网络错误';
-        document.getElementById('searchResults').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">网络错误: '+e.message+'</p>';
-    });
-}
-
-function importSearchPaper(paperId, title) {
-    var papersList = JSON.parse(localStorage.getItem('papers') || '[]');
-    var newId = papersList.length > 0 ? Math.max.apply(null, papersList.map(function(p){return p.id;})) + 1 : 1;
-    var paperTitle = title ? decodeURIComponent(title) : '论文 ' + paperId;
-    papersList.unshift({
-        id: newId,
-        title: paperTitle,
-        arxiv: paperId,
-        date: new Date().toISOString().split('T')[0],
-        tags: [],
-        abstract: '',
-        translated: '',
-        original: '',
-        analysis: '',
-        parsed: false
-    });
-    localStorage.setItem('papers', JSON.stringify(papersList));
-    papers = papersList;
-    alert('论文已添加到论文库: ' + paperTitle);
-    document.querySelectorAll('.nav-tab')[0].click();
-    renderPaperList();
-}
-
-
-function generateAnalysis() {
-    if (!currentPaper || !currentPaper.parsed) { alert('请先解析论文'); return; }
-    var btn = document.getElementById('analyzeBtn');
-    btn.innerHTML = '<span class="loading"></span> 分析中...';
-    btn.disabled = true;
-    document.getElementById('analysisContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在生成分析报告，请稍候...</p>';
-    
-    var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001');
-    
-    // First get analysis
-    fetch(apiUrl + '/api/analyze', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:currentPaper.title, abstract:currentPaper.abstract, content:currentPaper.original})})
-    .then(function(r){return r.json();})
-    .then(function(d){
-        if(d.success && d.text){
-            // Then convert to HTML
-            btn.innerHTML = '<span class="loading"></span> 格式转换中...';
-            fetch(apiUrl + '/api/convert', {
-                method:'POST',
-                headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({markdown: d.text, title: '分析报告'})
-            })
-            .then(function(r2){return r2.json();})
-            .then(function(d2){
-                if(d2.success && d2.text){
-                    document.getElementById('analysisContent').innerHTML = '<div class="analysis-section">'+d2.text+'</div>';
-                } else {
-                    document.getElementById('analysisContent').innerHTML = '<div class="analysis-section">'+d.text+'</div>';
-                }
-                btn.innerHTML = '生成分析报告'; btn.disabled = false;
-            })
-            .catch(function(e2){
-                document.getElementById('analysisContent').innerHTML = '<div class="analysis-section">'+d.text+'</div>';
-                btn.innerHTML = '生成分析报告'; btn.disabled = false;
-            });
-        } else {
-            alert('分析失败: '+(d.error||'未知'));
-            btn.innerHTML = '生成分析报告'; btn.disabled = false;
-        }
-    })
-    .catch(function(e){alert('网络错误: '+e.message);btn.innerHTML='生成分析报告';btn.disabled=false;});
-}
 </script>
-<script>document.addEventListener("DOMContentLoaded", function() {
-    if (typeof renderMathInElement !== 'undefined') {
-        renderMathInElement(document.body, {
-            delimiters: [
-                {left: "$$", right: "$$", display: true},
-                {left: "$", right: "$", display: false}
-            ],
-            throwOnError: false
-        });
-    }
-});</script>
 </body>
 </html>
