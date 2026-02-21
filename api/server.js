@@ -267,50 +267,65 @@ const server = http.createServer((req, res) => {
         req.on('data', c => body += c);
         req.on('end', () => {
             try {
-                const { query } = JSON.parse(body);
+                const { query, sort } = JSON.parse(body);
                 if (!query) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:'no query'})); return; }
                 
-                const prompt = `请根据以下关键词搜索相关的学术论文，返回JSON格式的结果。
-
-关键词: ${query}
-
-请搜索Semantic Scholar上相关的学术论文，返回以下格式的JSON（只需要JSON，不要其他内容）：
-{
-  "papers": [
-    {
-      "paperId": "论文ID",
-      "title": "论文标题",
-      "abstract": "摘要（如果太长请截断）",
-      "year": 发表年份,
-      "citationCount": 引用次数,
-      "similarity": 相似度分数(0-1之间),
-      "authors": ["作者1", "作者2"]
-    }
-  ]
-}
-
-请返回所有找到的相关论文，不要限制数量，返回50篇以上更好。如果搜索不到论文，请返回 {"papers": []}`;
-
-                callMiniMax(prompt, '你是一个学术论文搜索引擎。返回JSON格式的搜索结果。', (result) => {
-                    if (result.success && result.text) {
-                        try {
-                            // Extract JSON from response
-                            var jsonMatch = result.text.match(/\{[\s\S]*\}/);
-                            var papers = [];
-                            if (jsonMatch) {
-                                var data = JSON.parse(jsonMatch[0]);
-                                papers = data.papers || [];
+                // Call Semantic Scholar API with multiple queries for more results
+                const https = require('https');
+                const apiUrl = 'api.semanticscholar.org';
+                
+                // Fetch from multiple offsets and sort methods
+                const sortMethod = sort || 'citationCount';
+                const queries = [
+                    '/graph/v1/paper/search?query=' + encodeURIComponent(query) + '&limit=100&offset=0&sort=' + sortMethod + '&fields=paperId,title,authors,year,citationCount,venue,abstract,url,externalIds'
+                ];
+                
+                let allPapers = [];
+                let completed = 0;
+                
+                queries.forEach((apiPath, idx) => {
+                    https.get('https://' + apiUrl + apiPath, (apiRes) => {
+                        let data = '';
+                        apiRes.on('data', chunk => data += chunk);
+                        apiRes.on('end', () => {
+                            try {
+                                const json = JSON.parse(data);
+                                const papers = (json.data || []).map(p => {
+                                    const arxivId = p.externalIds && p.externalIds.ArXiv;
+                                    return {
+                                        paperId: arxivId || p.paperId || '',
+                                        title: p.title || '',
+                                        abstract: (p.abstract || '').substring(0, 500),
+                                        year: p.year || 2024,
+                                        citationCount: p.citationCount || 0,
+                                        authors: (p.authors || []).slice(0, 5).map(a => a.name),
+                                        url: p.url || '',
+                                        hasArxiv: !!arxivId
+                                    };
+                                });
+                                allPapers = allPapers.concat(papers);
+                            } catch(e) {}
+                            completed++;
+                            if (completed === queries.length) {
+                                // Sort by user choice
+                                if (sort === 'year') {
+                                    allPapers.sort((a, b) => (b.year || 0) - (a.year || 0));
+                                } else if (sort === 'relevance') {
+                                    // Keep original order for relevance
+                                } else {
+                                    allPapers.sort((a, b) => b.citationCount - a.citationCount);
+                                }
+                                res.writeHead(200, {'Content-Type':'application/json'});
+                                res.end(JSON.stringify({success:true, papers:allPapers.slice(0, 100)}));
                             }
+                        });
+                    }).on('error', () => {
+                        completed++;
+                        if (completed === queries.length) {
                             res.writeHead(200, {'Content-Type':'application/json'});
-                            res.end(JSON.stringify({success:true, papers:papers}));
-                        } catch(e) {
-                            res.writeHead(200, {'Content-Type':'application/json'});
-                            res.end(JSON.stringify({success:false, error:'解析结果失败'}));
+                            res.end(JSON.stringify({success:true, papers:allPapers.slice(0, 200)}));
                         }
-                    } else {
-                        res.writeHead(200, {'Content-Type':'application/json'});
-                        res.end(JSON.stringify({success:false, error:result.error||'搜索失败'}));
-                    }
+                    });
                 });
             } catch(e) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:e.message})); }
         });
@@ -390,6 +405,37 @@ const server = http.createServer((req, res) => {
                 callMiniMax(prompt, '你是一个专业的学术论文助手，擅长回答关于论文内容的问题。用中文回答。', (result) => {
                     res.writeHead(200, {'Content-Type':'application/json'});
                     res.end(JSON.stringify(result.success ? {success:true, text:result.text} : {success:false, error:result.error}));
+                });
+            } catch(e) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:e.message})); }
+        });
+        return;
+    }
+    
+// Search for arXiv ID by title using MiniMax
+    if (url.pathname === '/api/searchArxiv' && req.method === 'POST') {
+        let body = '';
+        req.on('data', c => body += c);
+        req.on('end', () => {
+            try {
+                const { title } = JSON.parse(body);
+                if (!title) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:'no title'})); return; }
+                
+                const prompt = `请根据以下论文标题搜索对应的arXiv ID。
+
+论文标题: ${title}
+
+请直接返回arXiv ID（如 2503.14443），不要返回其他内容。如果没有找到arXiv ID，请返回 "无"。`;
+
+                callMiniMax(prompt, '你是一个学术论文搜索引擎，擅长根据论文标题查找arXiv ID。只返回arXiv ID（如1706.03762），格式为4位年份.4-5位数字，不要其他内容。如果没有找到arXiv ID，请直接返回"无"。', (result) => {
+                    if (result.success && result.text) {
+                        // Extract arXiv ID
+                        let arxivId = result.text.match(/(\d{4}\.\d{4,5})/);
+                        res.writeHead(200, {'Content-Type':'application/json'});
+                        res.end(JSON.stringify({success:true, arxivId: arxivId ? arxivId[1] : null}));
+                    } else {
+                        res.writeHead(200, {'Content-Type':'application/json'});
+                        res.end(JSON.stringify({success:false, error:result.error}));
+                    }
                 });
             } catch(e) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:e.message})); }
         });
