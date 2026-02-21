@@ -274,7 +274,7 @@ function parsePaper() {
     var btn = document.getElementById('parseBtn');
     btn.innerHTML = '<span class="loading"></span> 解析中...';
     
-    var apiUrl = (localStorage.getItem('apiUrl') || 'https://your-vercel-app.vercel.app') + '/api/parse';
+    var apiUrl = (localStorage.getItem('apiUrl') || 'https://paper-analyzer-majs9hazj-shimly-2s-projects.vercel.app') + '/api/parse';
     var payload = {
         sourceType: 'arxiv',
         source: currentPaper.arxiv
