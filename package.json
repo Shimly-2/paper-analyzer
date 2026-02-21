@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "echo 'No build needed'"
+    "dev": "next dev",
+    "build": "next build && next export",
+    "start": "next start"
   }
 }

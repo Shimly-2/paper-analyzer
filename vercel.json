@@ -1,5 +1,7 @@
 {
+  "output": "static",
+  "public": true,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api.js" }
+    { "source": "/api/(.*)", "destination": "/index.html" }
   ]
 }
