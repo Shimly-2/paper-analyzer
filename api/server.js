@@ -1,21 +1,16 @@
 /**
- * Paper Analyzer - MinerU API Service (Node.js version)
- * 
- * Usage: node server.js [--port 5001]
+ * Paper Analyzer - MinerU API Service (Node.js)
+ * 调用 Python 脚本进行 PDF 解析
  */
 
+const { spawn } = require('child_process');
 const http = require('http');
-const https = require('https');
 const fs = require('fs');
 const path = require('path');
-const { URL } = require('url');
 
-// 配置
 const DEFAULT_PORT = 5001;
-const MINERU_API_URL = 'https://api.mineru.cn/v1/file/analyze';
-
-// Token 文件路径
 const TOKEN_FILE = path.join(__dirname, '..', 'config', 'mineru_token.txt');
+const PYTHON_SCRIPT = path.join(__dirname, 'mineru_client.py');
 
 // 获取 token
 function getMineruToken() {
@@ -23,102 +18,87 @@ function getMineruToken() {
         if (fs.existsSync(TOKEN_FILE)) {
             return fs.readFileSync(TOKEN_FILE, 'utf8').trim();
         }
-    } catch (e) {
-        console.error('读取token失败:', e.message);
-    }
+    } catch (e) {}
     return null;
 }
 
-// 保存 token
-function saveMineruToken(token) {
-    const configDir = path.join(__dirname, '..', 'config');
-    if (!fs.existsSync(configDir)) {
-        fs.mkdirSync(configDir, { recursive: true });
-    }
-    fs.writeFileSync(TOKEN_FILE, token);
-    return true;
-}
-
-// 获取 arXiv 论文信息
-function getArxivInfo(arxivId) {
-    return new Promise((resolve, reject) => {
-        const url = `http://export.arxiv.org/api/query?id_list=${arxivId}`;
-        
-        http.get(url, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                try {
-                    // 简单的 XML 解析
-                    const titleMatch = data.match(/<title>([^<]+)<\/title>/);
-                    const summaryMatch = data.match(/<summary>([^<]+)<\/summary>/);
-                    const publishedMatch = data.match(/<published>([^<]+)<\/published>/);
-                    const authorsMatch = data.match(/<name>([^<]+)<\/name>/g);
-                    
-                    const authors = authorsMatch ? authorsMatch.map(m => m.replace(/<\/?name>/g, '')) : [];
-                    
-                    if (titleMatch) {
-                        resolve({
-                            success: true,
-                            data: {
-                                id: arxivId,
-                                title: titleMatch[1].trim(),
-                                abstract: summaryMatch ? summaryMatch[1].trim() : '',
-                                authors: authors,
-                                published: publishedMatch ? publishedMatch[1].substring(0, 10) : '',
-                                pdf_url: `https://arxiv.org/pdf/${arxivId}.pdf`
-                            }
-                        });
-                    } else {
-                        resolve({ success: false, error: '未找到论文' });
-                    }
-                } catch (e) {
-                    resolve({ success: false, error: e.message });
-                }
-            });
-        }).on('error', reject);
+// 调用 Python 解析
+function parseWithPython(arxivId, callback) {
+    const args = ['-u', PYTHON_SCRIPT, '--arxiv', arxivId, '--output', '/tmp'];
+    
+    const proc = spawn('python3', args, {
+        cwd: path.dirname(PYTHON_SCRIPT)
     });
-}
-
-// 使用 MinerU 解析 PDF
-function parsePdfWithMineru(pdfUrl, token) {
-    return new Promise((resolve, reject) => {
-        const postData = JSON.stringify({ url: pdfUrl });
-        
-        const urlObj = new URL(MINERU_API_URL);
-        const options = {
-            hostname: urlObj.hostname,
-            path: urlObj.pathname,
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(postData)
+    
+    let output = '';
+    let error = '';
+    
+    proc.stdout.on('data', (data) => {
+        output += data.toString();
+    });
+    
+    proc.stderr.on('data', (data) => {
+        error += data.toString();
+    });
+    
+    proc.on('close', (code) => {
+        if (code === 0) {
+            const mdFile = '/tmp/paper.md';
+            if (fs.existsSync(mdFile)) {
+                const content = fs.readFileSync(mdFile, 'utf8');
+                callback(null, { success: true, markdown: content });
+            } else {
+                callback(null, { success: true, output });
             }
-        };
-        
-        const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                try {
-                    const result = JSON.parse(data);
-                    resolve({ success: true, data: result });
-                } catch (e) {
-                    resolve({ success: false, error: '解析响应失败', detail: data });
-                }
-            });
-        });
-        
-        req.on('error', reject);
-        req.write(postData);
-        req.end();
+        } else {
+            callback(error || '解析失败', null);
+        }
     });
 }
 
-// 简单的路由处理
-async function handleRequest(req, res) {
-    // 设置 CORS 头
+// 获取 arXiv 论文信息 (同步版本)
+function getArxivInfoSync(arxivId, callback) {
+    const http = require('http');
+    const url = `http://export.arxiv.org/api/query?id_list=${arxivId}`;
+    
+    http.get(url, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+            try {
+                const titleMatch = data.match(/<title>([^<]+)<\/title>/);
+                const summaryMatch = data.match(/<summary>([^<]+)<\/summary>/);
+                const publishedMatch = data.match(/<published>([^<]+)<\/published>/);
+                const authorsMatch = data.match(/<name>([^<]+)<\/name>/g);
+                
+                const authors = authorsMatch ? authorsMatch.map(m => m.replace(/<\/?name>/g, '')) : [];
+                
+                if (titleMatch) {
+                    callback(null, {
+                        success: true,
+                        data: {
+                            id: arxivId,
+                            title: titleMatch[1].trim(),
+                            abstract: summaryMatch ? summaryMatch[1].trim() : '',
+                            authors: authors,
+                            published: publishedMatch ? publishedMatch[1].substring(0, 10) : '',
+                            pdf_url: `https://arxiv.org/pdf/${arxivId}.pdf`
+                        }
+                    });
+                } else {
+                    callback(null, { success: false, error: '未找到论文' });
+                }
+            } catch (e) {
+                callback(e, null);
+            }
+        });
+    }).on('error', (e) => {
+        callback(e, null);
+    });
+}
+
+// HTTP 服务器
+const server = http.createServer((req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -136,7 +116,7 @@ async function handleRequest(req, res) {
     if (pathname === '/api/parse' && req.method === 'POST') {
         let body = '';
         req.on('data', chunk => body += chunk);
-        req.on('end', async () => {
+        req.on('end', () => {
             try {
                 const data = JSON.parse(body);
                 const { sourceType, source } = data;
@@ -148,21 +128,38 @@ async function handleRequest(req, res) {
                     return;
                 }
                 
-                let pdfUrl = '';
+                let arxivId = null;
                 if (sourceType === 'arxiv') {
-                    pdfUrl = `https://arxiv.org/pdf/${source}.pdf`;
-                } else if (sourceType === 'url') {
-                    pdfUrl = source;
+                    arxivId = source;
+                } else if (sourceType === 'url' && source.includes('arxiv.org/pdf/')) {
+                    arxivId = source.replace('https://arxiv.org/pdf/', '').replace('.pdf', '');
                 }
                 
-                if (pdfUrl) {
-                    const result = await parsePdfWithMineru(pdfUrl, token);
+                if (!arxivId) {
                     res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify(result));
-                } else {
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, error: '无效的源' }));
+                    res.end(JSON.stringify({ success: false, error: '仅支持 arXiv 论文解析' }));
+                    return;
                 }
+                
+                // 获取论文信息
+                getArxivInfoSync(arxivId, (err, paperInfo) => {
+                    // 调用 Python 解析
+                    parseWithPython(arxivId, (parseErr, result) => {
+                        if (parseErr) {
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ success: false, error: parseErr }));
+                        } else {
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({
+                                success: true,
+                                data: {
+                                    ...(paperInfo && paperInfo.data ? paperInfo.data : {}),
+                                    markdown: result.markdown
+                                }
+                            }));
+                        }
+                    });
+                });
             } catch (e) {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, error: e.message }));
@@ -185,36 +182,19 @@ async function handleRequest(req, res) {
         return;
     }
     
-    // API: 设置 token
-    if (pathname === '/api/token' && req.method === 'POST') {
-        let body = '';
-        req.on('data', chunk => body += chunk);
-        req.on('end', () => {
-            try {
-                const data = JSON.parse(body);
-                if (data.token) {
-                    saveMineruToken(data.token);
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: true, message: 'Token 保存成功' }));
-                } else {
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, error: '缺少 token' }));
-                }
-            } catch (e) {
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false, error: e.message }));
-            }
-        });
-        return;
-    }
-    
     // API: 获取 arXiv 信息
     if (pathname === '/api/arxiv/info' && req.method === 'GET') {
         const arxivId = url.searchParams.get('id');
         if (arxivId) {
-            const result = await getArxivInfo(arxivId);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(result));
+            getArxivInfoSync(arxivId, (err, result) => {
+                if (err) {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: err.message }));
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(result));
+                }
+            });
         } else {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, error: '缺少 id 参数' }));
@@ -222,34 +202,21 @@ async function handleRequest(req, res) {
         return;
     }
     
-    // 默认返回 API 信息
+    // 默认返回信息
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ 
         service: 'Paper Analyzer API',
         version: '1.0.0',
-        endpoints: [
-            '/api/parse - 解析论文',
-            '/api/token - 获取/设置 token',
-            '/api/arxiv/info - 获取 arXiv 信息'
-        ]
+        mineru: getMineruToken() ? '已配置' : '未配置'
     }));
-}
-
-// 启动服务器
-const port = process.env.PORT || DEFAULT_PORT;
-const server = http.createServer(handleRequest);
-
-server.listen(port, '0.0.0.0', () => {
-    const token = getMineruToken();
-    console.log(`Paper Analyzer API 服务已启动: http://localhost:${port}`);
-    console.log(`MinerU Token: ${token ? '已配置' : '未配置'}`);
 });
 
-// 优雅退出
+const port = process.env.PORT || DEFAULT_PORT;
+server.listen(port, '0.0.0.0', () => {
+    console.log(`Paper Analyzer API 服务已启动: http://localhost:${port}`);
+    console.log(`MinerU Token: ${getMineruToken() ? '已配置' : '未配置'}`);
+});
+
 process.on('SIGTERM', () => {
-    console.log('收到 SIGTERM，正在关闭...');
-    server.close(() => {
-        console.log('服务已关闭');
-        process.exit(0);
-    });
+    server.close(() => process.exit(0));
 });
