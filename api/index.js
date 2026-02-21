@@ -1,9 +1,6 @@
-const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const https = require('https');
 
 module.exports = async (req, res) => {
-    // Set CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -16,17 +13,18 @@ module.exports = async (req, res) => {
     const url = new URL(req.url, `https://${req.headers.host}`);
     const pathname = url.pathname;
     
+    // Token from env
+    const token = process.env.MINERU_TOKEN;
+    
     // API: 解析论文
     if (pathname === '/api/parse' && req.method === 'POST') {
-        const { sourceType, source } = req.body || {};
-        
-        if (!source) {
-            res.status(200).json({ success: false, error: '缺少 source 参数' });
-            return;
-        }
+        const body = req.body || {};
+        const { sourceType, source } = body;
         
         let arxivId = null;
-        if (sourceType === 'arxiv' || (source.includes('arxiv.org') && source.includes('pdf'))) {
+        if (sourceType === 'arxiv') {
+            arxivId = source;
+        } else if (source && source.includes('arxiv.org/pdf')) {
             arxivId = source.replace('https://arxiv.org/pdf/', '').replace('.pdf', '');
         }
         
@@ -35,29 +33,112 @@ module.exports = async (req, res) => {
             return;
         }
         
-        // 获取 arXiv 信息
-        const arxivInfo = await getArxivInfo(arxivId);
-        
-        // 调用 Python 解析
-        const parseResult = await parseWithPython(arxivId);
-        
-        if (parseResult.success) {
-            res.status(200).json({
-                success: true,
-                data: {
-                    ...(arxivInfo.data || {}),
-                    markdown: parseResult.markdown
-                }
-            });
-        } else {
-            res.status(200).json({ success: false, error: parseResult.error });
+        if (!token) {
+            res.status(200).json({ success: false, error: '未配置 MINERU_TOKEN' });
+            return;
         }
+        
+        // 1. 提交解析任务
+        const postData = JSON.stringify({
+            url: `https://arxiv.org/pdf/${arxivId}.pdf`,
+            model_version: 'vlm'
+        });
+        
+        const options = {
+            hostname: 'mineru.net',
+            path: '/api/v4/extract/task',
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            }
+        };
+        
+        const result = await new Promise((resolve, reject) => {
+            const req = https.request(options, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => resolve({ status: res.statusCode, data }));
+            });
+            req.on('error', reject);
+            req.write(postData);
+            req.end();
+        });
+        
+        if (result.status !== 200) {
+            res.status(200).json({ success: false, error: '提交任务失败' });
+            return;
+        }
+        
+        let taskResult;
+        try {
+            taskResult = JSON.parse(result.data);
+        } catch (e) {
+            res.status(200).json({ success: false, error: '解析响应失败' });
+            return;
+        }
+        
+        if (taskResult.code !== 0) {
+            res.status(200).json({ success: false, error: taskResult.msg });
+            return;
+        }
+        
+        const taskId = taskResult.data.task_id;
+        
+        // 2. 轮询等待结果
+        for (let i = 0; i < 40; i++) {
+            await new Promise(r => setTimeout(r, 3000));
+            
+            const pollResult = await new Promise((resolve, reject) => {
+                const req = https.request({
+                    hostname: 'mineru.net',
+                    path: `/api/v4/extract/task/${taskId}`,
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }, (res) => {
+                    let data = '';
+                    res.on('data', chunk => data += chunk);
+                    res.on('end', () => resolve({ status: res.statusCode, data }));
+                });
+                req.on('error', reject);
+                req.end();
+            });
+            
+            if (pollResult.status === 200) {
+                try {
+                    const pollData = JSON.parse(pollResult.data);
+                    const state = pollData.data?.state;
+                    
+                    if (state === 'done') {
+                        // 3. 获取论文信息
+                        const arxivInfo = await getArxivInfo(arxivId);
+                        
+                        // 返回成功（不带完整 markdown，因为 serverless 超时）
+                        res.status(200).json({
+                            success: true,
+                            data: {
+                                id: arxivId,
+                                title: arxivInfo.title || '论文',
+                                abstract: arxivInfo.abstract || '',
+                                message: '解析成功！由于 Vercel 超时限制，请查看本地 API 服务获取完整内容。'
+                            }
+                        });
+                        return;
+                    } else if (state === 'failed') {
+                        res.status(200).json({ success: false, error: '解析失败' });
+                        return;
+                    }
+                } catch (e) {}
+            }
+        }
+        
+        res.status(200).json({ success: false, error: '解析超时' });
         return;
     }
     
-    // API: token 状态
+    // Token 状态
     if (pathname === '/api/token' && req.method === 'GET') {
-        const token = process.env.MINERU_TOKEN;
         if (token) {
             res.status(200).json({ success: true, configured: true, masked: token.substring(0, 10) + '...' });
         } else {
@@ -71,10 +152,10 @@ module.exports = async (req, res) => {
 
 function getArxivInfo(arxivId) {
     return new Promise((resolve) => {
-        const https = require('https');
+        const http = require('http');
         const url = `http://export.arxiv.org/api/query?id_list=${arxivId}`;
         
-        https.get(url, (res) => {
+        http.get(url, (res) => {
             let data = '';
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
@@ -83,115 +164,15 @@ function getArxivInfo(arxivId) {
                     const summaryMatch = data.match(/<summary>([^<]+)<\/summary>/);
                     const publishedMatch = data.match(/<published>([^<]+)<\/published>/);
                     
-                    if (titleMatch) {
-                        resolve({ success: true, data: { id: arxivId, title: titleMatch[1].trim(), abstract: summaryMatch ? summaryMatch[1].trim() : '', published: publishedMatch ? publishedMatch[1].substring(0, 10) : '' }});
-                    } else {
-                        resolve({ success: false });
-                    }
-                } catch (e) {
-                    resolve({ success: false });
-                }
-            });
-        }).on('error', () => resolve({ success: false }));
-    });
-}
-
-function parseWithPython(arxivId) {
-    return new Promise((resolve) => {
-        // 使用 Vercel serverless 环境中的 Python
-        const { spawn } = require('child_process');
-        
-        // 在 serverless 中我们需要直接调用 API
-        const https = require('https');
-        const token = process.env.MINERU_TOKEN;
-        
-        if (!token) {
-            resolve({ success: false, error: '未配置 token' });
-            return;
-        }
-        
-        // 1. 提交任务
-        const postData = JSON.stringify({ url: `https://arxiv.org/pdf/${arxivId}.pdf`, model_version: 'vlm' });
-        const options = {
-            hostname: 'mineru.net',
-            path: '/api/v4/extract/task',
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) }
-        };
-        
-        const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-                try {
-                    const result = JSON.parse(data);
-                    if (result.code === 0) {
-                        const taskId = result.data.task_id;
-                        // 轮询结果
-                        pollResult(taskId, token, 0, resolve);
-                    } else {
-                        resolve({ success: false, error: result.msg });
-                    }
-                } catch (e) {
-                    resolve({ success: false, error: e.message });
-                }
-            });
-        });
-        
-        req.write(postData);
-        req.end();
-    });
-}
-
-function pollResult(taskId, token, count, resolve) {
-    if (count > 30) {
-        resolve({ success: false, error: '解析超时' });
-        return;
-    }
-    
-    const https = require('https');
-    const options = {
-        hostname: 'mineru.net',
-        path: `/api/v4/extract/task/${taskId}`,
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` }
-    };
-    
-    const req = https.request(options, (res) => {
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => {
-            try {
-                const result = JSON.parse(data);
-                const state = result.data?.state;
-                
-                if (state === 'done') {
-                    // 下载结果
-                    const zipUrl = result.data.full_zip_url;
-                    https.get(zipUrl, (zipRes) => {
-                        const chunks = [];
-                        zipRes.on('data', c => chunks.push(c));
-                        zipRes.on('end', () => {
-                            try {
-                                const z = require('zlib').unzipSync(Buffer.concat(chunks));
-                                // 解析 ZIP (简化版)
-                                resolve({ success: true, markdown: '# 论文内容\n\n解析成功，请查看完整内容。' });
-                            } catch (e) {
-                                resolve({ success: true, markdown: '# 论文解析完成\n\n详细内容请查看附件。' });
-                        });
-                    }).on('error', () => {
-                        resolve({ success: true, markdown: '# 论文解析完成\n\n详细内容已生成。' });
+                    resolve({
+                        title: titleMatch ? titleMatch[1].trim() : '',
+                        abstract: summaryMatch ? summaryMatch[1].trim() : '',
+                        published: publishedMatch ? publishedMatch[1].substring(0, 10) : ''
                     });
-                } else if (state === 'failed') {
-                    resolve({ success: false, error: '解析失败' });
-                } else {
-                    setTimeout(() => pollResult(taskId, token, count + 1, resolve), 3000);
+                } catch (e) {
+                    resolve({ title: '', abstract: '' });
                 }
-            } catch (e) {
-                setTimeout(() => pollResult(taskId, token, count + 1, resolve), 3000);
-            }
-        });
+            });
+        }).on('error', () => resolve({ title: '', abstract: '' }));
     });
-    
-    req.end();
 }
