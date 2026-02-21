@@ -274,7 +274,7 @@ function parsePaper() {
     var btn = document.getElementById('parseBtn');
     btn.innerHTML = '<span class="loading"></span> 解析中...';
     
-    var apiUrl = (localStorage.getItem('apiUrl') || 'https://paper-analyzer-4nlwg5koc-shimly-2s-projects.vercel.app') + '/api/parse';
+    var apiUrl = (localStorage.getItem('apiUrl') || 'https://paper-analyzer-epzlpa4m4-shimly-2s-projects.vercel.app') + '/api/parse';
     var payload = {
         sourceType: 'arxiv',
         source: currentPaper.arxiv
@@ -501,7 +501,7 @@ renderPaperList();
 updateContent();
 
 function showApiSettings(){
-    var url = prompt("请输入 API 服务器地址:", localStorage.getItem("apiUrl") || 'https://paper-analyzer-4nlwg5koc-shimly-2s-projects.vercel.app');
+    var url = prompt("请输入 API 服务器地址:", localStorage.getItem("apiUrl") || 'https://paper-analyzer-epzlpa4m4-shimly-2s-projects.vercel.app');
     if(url){
         localStorage.setItem("apiUrl", url);
         alert("API 已更新为: " + url);
