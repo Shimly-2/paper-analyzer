@@ -1,8 +1,8 @@
 {
   "name": "paper-analyzer",
   "version": "1.0.0",
-  "main": "api/index.js",
+  "private": true,
   "scripts": {
-    "start": "node api/index.js"
+    "build": "echo 'No build needed'"
   }
 }
