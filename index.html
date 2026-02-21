@@ -501,7 +501,7 @@ renderPaperList();
 updateContent();
 
 function showApiSettings(){
-    var url = prompt("请输入 API 服务器地址:", localStorage.getItem("apiUrl") || "http://192.168.3.24:5001");
+    var url = prompt("请输入 API 服务器地址:", localStorage.getItem("apiUrl") || 'https://paper-analyzer-majs9hazj-shimly-2s-projects.vercel.app');
     if(url){
         localStorage.setItem("apiUrl", url);
         alert("API 已更新为: " + url);
