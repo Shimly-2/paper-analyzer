@@ -192,7 +192,7 @@ const server = http.createServer((req, res) => {
                 const { title, abstract, content } = JSON.parse(body);
                 if (!content) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:'no content'})); return; }
                 
-                const prompt = `请对以下学术论文进行**同行评审**（Peer Review），按照以下结构进行系统性评估：
+                const prompt = `请用中文对以下学术论文进行**同行评审**（Peer Review），按照以下结构进行系统性评估：
 
 ## 1. 初始评估
 - 核心研究问题是什么？
@@ -344,11 +344,12 @@ const server = http.createServer((req, res) => {
 - 行内公式（句子中）：用 $公式$，使用KaTeX来在HTML中渲染公式，KaTeX会自动渲染为行内公式
    - KaTeX会自动渲染公式
 5. 图片URL：http://192.168.3.24:5001/api/images/图片名.jpg
-6. 表格：<table border="1" style="border-collapse:collapse;width:100%;margin:12px 0">
+6. 表格：<table border="1" style="border-collapse:collapse;width:100%;margin:12px 0;background:#2d2d2d;color:#f8f8f2;border-radius:8px"><tr style="background:#1a1a1a"><td style="padding:12px;border:1px solid #444;font-weight:bold">表头</td></tr><tr><td style="padding:12px;border:1px solid #444">内容</td></tr></table>
 7. 段落：<p style="margin:12px 0;line-height:1.8">文字</p>
 8. 列表：<ul><li>项目</li></ul>
 9. 标题：<h1 style="font-size:24px;margin:16px 0">、<h2 style="font-size:20px;margin:14px 0">、<h3 style="font-size:16px;margin:12px 0">
 10. 图片：<p style="text-align:center"><img src="URL" style="max-width:100%"></p>
+11. 代码块（bash/命令行）：<pre style="background:#2d2d2d;color:#f8f8f2;padding:16px;border-radius:8px;overflow-x:auto;line-height:1.5;font-family:monospace">代码</pre>
 
 **禁止：**
 - flex、grid、float

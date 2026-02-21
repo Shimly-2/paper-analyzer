@@ -165,6 +165,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js">
 
+function fetchWithFallback(url, options, callback) {
+    var tryUrl = function(u) {
+        fetch(u, options).then(function(r) { callback(r); }).catch(function() {
+            var idx = fallbackUrls.indexOf(u);
+            if (idx < fallbackUrls.length - 1) {
+                tryUrl(fallbackUrls[idx + 1]);
+            } else {
+                callback(null);
+            }
+        });
+    };
+    fetch(url, options).then(function(r) { callback(r); }).catch(function() { tryUrl(fallbackUrls[0]); });
+}
+
 function downloadPaper() {
     if (!currentPaper) { alert('请先选择一篇论文'); return; }
     var data = {
@@ -231,6 +245,20 @@ function importPaper() {
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js">
+
+function fetchWithFallback(url, options, callback) {
+    var tryUrl = function(u) {
+        fetch(u, options).then(function(r) { callback(r); }).catch(function() {
+            var idx = fallbackUrls.indexOf(u);
+            if (idx < fallbackUrls.length - 1) {
+                tryUrl(fallbackUrls[idx + 1]);
+            } else {
+                callback(null);
+            }
+        });
+    };
+    fetch(url, options).then(function(r) { callback(r); }).catch(function() { tryUrl(fallbackUrls[0]); });
+}
 
 function downloadPaper() {
     if (!currentPaper) { alert('请先选择一篇论文'); return; }
@@ -459,13 +487,15 @@ function parsePaper() {
     btn.innerHTML = '<span class="loading"></span> 解析中...';
     document.getElementById('originalContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在解析论文，请稍候...</p>';
     
-    var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001');
+    var apiUrl = localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001';
+    // Fallback URLs
+    var fallbackUrls = ['http://localhost:5001', 'http://127.0.0.1:5001'];
     var payload = {
         sourceType: 'arxiv',
         source: currentPaper.arxiv
     };
     
-    fetch(apiUrl + '/api/parse', {
+    fetchWithFallback(apiUrl + '/api/parse', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(payload)
@@ -534,7 +564,9 @@ function translatePaper() {
     btn.innerHTML = '<span class="loading"></span> 翻译中...';
     document.getElementById('translatedContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在翻译论文，请稍候...</p>';
     
-    var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001');
+    var apiUrl = localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001';
+    // Fallback URLs
+    var fallbackUrls = ['http://localhost:5001', 'http://127.0.0.1:5001'];
     var htmlContent = currentPaper.original;
     
     fetch(apiUrl + '/api/translate', {
@@ -848,7 +880,9 @@ function generateAnalysis() {
     btn.disabled = true;
     document.getElementById('analysisContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在生成分析报告，请稍候...</p>';
     
-    var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001');
+    var apiUrl = localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001';
+    // Fallback URLs
+    var fallbackUrls = ['http://localhost:5001', 'http://127.0.0.1:5001'];
     
     // First get analysis
     fetch(apiUrl + '/api/analyze', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:currentPaper.title, abstract:currentPaper.abstract, content:currentPaper.original})})
@@ -885,6 +919,20 @@ function generateAnalysis() {
     .catch(function(e){alert('网络错误: '+e.message);btn.innerHTML='生成分析报告';btn.disabled=false;});
 }
 
+
+function fetchWithFallback(url, options, callback) {
+    var tryUrl = function(u) {
+        fetch(u, options).then(function(r) { callback(r); }).catch(function() {
+            var idx = fallbackUrls.indexOf(u);
+            if (idx < fallbackUrls.length - 1) {
+                tryUrl(fallbackUrls[idx + 1]);
+            } else {
+                callback(null);
+            }
+        });
+    };
+    fetch(url, options).then(function(r) { callback(r); }).catch(function() { tryUrl(fallbackUrls[0]); });
+}
 
 function downloadPaper() {
     if (!currentPaper) { alert('请先选择一篇论文'); return; }
@@ -962,6 +1010,20 @@ function importPaper() {
         });
     }
 });
+
+function fetchWithFallback(url, options, callback) {
+    var tryUrl = function(u) {
+        fetch(u, options).then(function(r) { callback(r); }).catch(function() {
+            var idx = fallbackUrls.indexOf(u);
+            if (idx < fallbackUrls.length - 1) {
+                tryUrl(fallbackUrls[idx + 1]);
+            } else {
+                callback(null);
+            }
+        });
+    };
+    fetch(url, options).then(function(r) { callback(r); }).catch(function() { tryUrl(fallbackUrls[0]); });
+}
 
 function downloadPaper() {
     if (!currentPaper) { alert('请先选择一篇论文'); return; }
