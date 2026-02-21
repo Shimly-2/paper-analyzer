@@ -165,7 +165,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 <div class="nav-left"><span class="nav-logo">Paper Analyzer</span>
 <div class="nav-tabs"><button class="nav-tab active">论文库</button><button class="nav-tab">阅读模式</button><button class="nav-tab">分析报告</button></div>
 </div>
-<button class="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button><div class="nav-right"><button class="nav-btn" onclick="showAddPaperModal()">+ 添加论文</button><button class="nav-btn" onclick="clearAllPapers()">清空</button></div>
+<button class="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button><div class="nav-right"><button class="nav-btn" onclick="showAddPaperModal()">+ 添加论文</button><button class="nav-btn" onclick="clearAllPapers()">清空</button><button class="nav-btn" onclick="showApiSettings()">API</button></div>
 </nav>
 <div class="overlay" id="mobileOverlay" onclick="toggleMobileSidebar()"></div><div class="container">
 <aside class="sidebar-left" id="sidebarLeft">
@@ -275,7 +275,7 @@ function parsePaper() {
     btn.innerHTML = '<span class="loading"></span> 解析中...';
     
     // 调用后端 API 解析论文
-    var apiUrl = 'http://localhost:5001/api/parse';
+    var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001') + '/api/parse';
     var payload = {
         sourceType: currentPaper.arxiv ? 'arxiv' : 'url',
         source: currentPaper.arxiv || currentPaper.pdfUrl
@@ -517,6 +517,14 @@ function sendMessage(){
 
 renderPaperList();
 updateContent();
+
+function showApiSettings(){
+    var url = prompt("请输入 API 服务器地址:", localStorage.getItem("apiUrl") || "http://192.168.3.24:5001");
+    if(url){
+        localStorage.setItem("apiUrl", url);
+        alert("API 已更新为: " + url);
+    }
+}
 
 function toggleMobileSidebar(){
     var sidebar = document.getElementById('sidebarLeft');
