@@ -1,4 +1,4 @@
-module.exports = (req, res) => {
+exports.default = (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.status(200).json({ ok: true, token: !!process.env.MINERU_TOKEN });
+    res.status(200).json({ ok: true });
 };
