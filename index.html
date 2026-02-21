@@ -274,7 +274,7 @@ function parsePaper() {
     var btn = document.getElementById('parseBtn');
     btn.innerHTML = '<span class="loading"></span> 解析中...';
     
-    var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001') + '/api/parse';
+    var apiUrl = (localStorage.getItem('apiUrl') || 'https://con-kent-surprise-components.trycloudflare.com') + '/api/parse';
     var payload = {
         sourceType: 'arxiv',
         source: currentPaper.arxiv
