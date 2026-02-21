@@ -1,6 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/functions/parse.js" },
-    { "source": "/((?!api).*)", "destination": "/index.html" }
-  ]
-}
