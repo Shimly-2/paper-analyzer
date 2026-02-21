@@ -340,8 +340,8 @@ const server = http.createServer((req, res) => {
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script>renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}]});</script>
 
-- 块级公式（独立一行）：用 $$公式$$，KaTeX会自动渲染为行间公式（display模式）
-- 行内公式（句子中）：用 $公式$，KaTeX会渲染为行内公式
+- 块级公式（独立一行）：用 $$公式$$，使用KaTeX来在HTML中渲染公式，KaTeX会自动渲染为行间公式（display模式）
+- 行内公式（句子中）：用 $公式$，使用KaTeX来在HTML中渲染公式，KaTeX会自动渲染为行内公式
    - KaTeX会自动渲染公式
 5. 图片URL：http://192.168.3.24:5001/api/images/图片名.jpg
 6. 表格：<table border="1" style="border-collapse:collapse;width:100%;margin:12px 0">
