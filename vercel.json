@@ -1,7 +1,4 @@
 {
-  "output": "static",
-  "public": true,
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/index.html" }
-  ]
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next"
 }
