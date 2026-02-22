@@ -13,6 +13,6 @@
     }
   },
   "deploy": {
-    "startCommand": "echo 'Node+Python env installed successfully'"
+    "startCommand": "node --version && python3 --version && node api/server.js"
   }
 }
