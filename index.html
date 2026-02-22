@@ -401,7 +401,7 @@ var customTags = [];
 // 初始化：从 SQLite 加载论文
     
 function initPapers() {
-    var apiUrl = localStorage.getItem('apiUrl');
+    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
     if (!apiUrl) apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
     
     var papersUrl = apiUrl + '/api/papers';
@@ -449,7 +449,7 @@ function initPapers() {
 }
 
 function savePapers() { 
-    var apiUrl = localStorage.getItem('apiUrl');
+    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
     if (!apiUrl) apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
     papers.forEach(function(p) {
         // 确保 tags 是数组
@@ -525,7 +525,7 @@ function updateContent() {
         return;
     }
     if (currentPaper.parsed && currentPaper.original) {
-        var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+        var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
         var content = currentPaper.original.replace(/\/api\/images\//g, apiUrl + '/api/images/');
         document.getElementById("originalContent").innerHTML = content;
         if (currentPaper.translated) {
@@ -558,7 +558,7 @@ function parsePaper() {
     btn.innerHTML = '<span class="loading"></span> 解析中...';
     document.getElementById('originalContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在解析论文，请稍候...</p>';
     
-    var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
     
     // Check if it's a PDF file
     if (currentPaper.arxiv === 'PDF' && currentPaper.pdfUrl) {
@@ -586,7 +586,7 @@ function parsePaper() {
                         currentPaper.original = d2.text;
                         currentPaper.parsed = true;
                         savePapers();
-                        var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+                        var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
                         var content = d2.text.replace(/\/api\/images\//g, apiUrl + '/api/images/');
                         document.getElementById('originalContent').innerHTML = content;
                         document.getElementById('analysisTitle').innerHTML = currentPaper.title;
@@ -638,7 +638,7 @@ function parsePaper() {
                     currentPaper.original = d.text;
                     currentPaper.parsed = true;
                     savePapers();
-                    var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+                    var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
                     var content = d.text.replace(/\/api\/images\//g, apiUrl + '/api/images/');
                     document.getElementById('originalContent').innerHTML = content;
                     document.getElementById('analysisTitle').innerHTML = currentPaper.title;
@@ -684,7 +684,7 @@ function translatePaper() {
     btn.innerHTML = '<span class="loading"></span> 翻译中...';
     document.getElementById('translatedContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在翻译论文，请稍候...</p>';
     
-    var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
     // Fallback URLs
     var fallbackUrls = ['http://localhost:5001', 'http://127.0.0.1:5001'];
     var htmlContent = currentPaper.original;
@@ -700,7 +700,7 @@ function translatePaper() {
             currentPaper.translated = d.text;
             currentPaper.abstract = currentPaper.abstract || '';
             savePapers();
-            var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+            var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
             var translated = d.text.replace(/\/api\/images\//g, apiUrl + '/api/images/');
             document.getElementById('translatedContent').innerHTML = translated;
         } else {
@@ -853,7 +853,7 @@ function addPaper(){
         ids.forEach(function(id,i){newPapers.push({id:newId+i,title:"论文 " + id.trim(),arxiv:id.trim(),date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});});
     } else if(type === 'pdf' && pdfFiles && pdfFiles.length > 0){
         // Upload PDFs first
-        var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+        var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
         var uploadPromises = pdfFiles.map(function(f, i) {
             var formData = new FormData();
             formData.append('file', f);
@@ -918,7 +918,7 @@ function sendMessage(){
         context = '论文标题: ' + (currentPaper.title || '') + '\n\n论文内容:\n' + currentPaper.original.substring(0, 196608);
     }
     
-    var apiUrl = (localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev');
+    var apiUrl = (null || 'https://arlene-unprompted-janette.ngrok-free.dev');
     fetch(apiUrl + '/api/chat', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -988,7 +988,7 @@ function generatePeerReview() {
     btn.disabled = true;
     document.getElementById('peerReviewContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在生成同行评审，请稍候...</p>';
     
-    var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
     
     // First get peer review
     fetch(apiUrl + '/api/peerReview', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:currentPaper.title, abstract:currentPaper.abstract, content:document.getElementById('originalContent').innerHTML})})
@@ -1034,7 +1034,7 @@ function doSemanticSearch() {
     if (!query) { alert('请输入搜索关键词'); return; }
     document.getElementById('searchStats').innerHTML = '正在搜索...';
     document.getElementById('searchResults').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">搜索中，请稍候...</p>';
-    var apiUrl = (localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev') + '/api/semanticSearch';
+    var apiUrl = (null || 'https://arlene-unprompted-janette.ngrok-free.dev') + '/api/semanticSearch';
     fetch(apiUrl, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:query, sort:document.getElementById('sortBy').value})})
     .then(function(r){return r.json();})
     .then(function(d){
@@ -1069,7 +1069,7 @@ function doSemanticSearch() {
 function importSearchPaper(paperId, title, hasArxiv) {
     var papersList = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
     var paperTitle = title ? decodeURIComponent(title) : '论文 ' + paperId;
-    var apiUrl = (localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev');
+    var apiUrl = (null || 'https://arlene-unprompted-janette.ngrok-free.dev');
     
     // Check if paperId is valid arXiv format
     var isValidArxiv = paperId && paperId.match(/^\d{4}\.\d{4,5}$/);
@@ -1136,7 +1136,7 @@ function generateAnalysis() {
     btn.disabled = true;
     document.getElementById('analysisContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在生成分析报告，请稍候...</p>';
     
-    var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
     // Fallback URLs
     var fallbackUrls = ['http://localhost:5001', 'http://127.0.0.1:5001'];
     
