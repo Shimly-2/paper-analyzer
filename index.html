@@ -399,6 +399,7 @@ var pdfFiles = [];
 var customTags = [];
 
 // 初始化：从 SQLite 加载论文
+    console.log('=== initPapers 开始 ===');
 function initPapers() {
     var apiUrl = localStorage.getItem('apiUrl');
     if (!apiUrl) apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
