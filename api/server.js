@@ -481,6 +481,50 @@ const server = http.createServer((req, res) => {
         return;
     }
     
+    // Get all papers from SQLite
+    if (url.pathname === '/api/papers' && req.method === 'GET') {
+        db.all('SELECT * FROM papers ORDER BY updatedAt DESC', [], (err, rows) => {
+            if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+            else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true, data:rows})); }
+        });
+        return;
+    }
+    
+    // Save paper to SQLite
+    if (url.pathname === '/api/papers' && req.method === 'POST') {
+        let body = '';
+        req.on('data', c => body += c);
+        req.on('end', () => {
+            try {
+                const paper = JSON.parse(body);
+                const stmt = db.prepare(`
+                    INSERT INTO papers (title, arxiv, pdfUrl, date, parsed, original, translated, analysis, peerReview, abstract, tags, updatedAt)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                    ON CONFLICT(id) DO UPDATE SET
+                        title=excluded.title, arxiv=excluded.arxiv, pdfUrl=excluded.pdfUrl, date=excluded.date,
+                        parsed=excluded.parsed, original=excluded.original, translated=excluded.translated,
+                        analysis=excluded.analysis, peerReview=excluded.peerReview, abstract=excluded.abstract,
+                        tags=excluded.tags, updatedAt=datetime('now')
+                `);
+                stmt.run(paper.title, paper.arxiv, paper.pdfUrl, paper.date, paper.parsed?1:0, paper.original, paper.translated, paper.analysis, paper.peerReview, paper.abstract, JSON.stringify(paper.tags||[]), (err) => {
+                    if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+                    else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true})); }
+                });
+            } catch(e) { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:e.message})); }
+        });
+        return;
+    }
+    
+    // Delete paper from SQLite
+    if (url.pathname.startsWith('/api/papers/') && req.method === 'DELETE') {
+        const id = url.pathname.split('/').pop();
+        db.run('DELETE FROM papers WHERE id = ?', [id], (err) => {
+            if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+            else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true})); }
+        });
+        return;
+    }
+    
     // Serve images
     if (url.pathname.startsWith('/api/images/')) {
         const imgName = url.pathname.replace('/api/images/', '');
