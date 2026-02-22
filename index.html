@@ -717,9 +717,18 @@ function translatePaper() {
 
 function deletePaper(id) {
     if(confirm("确定删除这篇论文？")) {
+        // 调用后端 DELETE API
+        fetch(apiUrl + '/api/papers/' + id, {method: 'DELETE'})
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                console.log('删除结果:', d);
+            })
+            .catch(function(e) {
+                console.error('删除失败:', e);
+            });
+        
         papers = papers.filter(function(p){return p.id!==id;});
         currentPaper = papers.length > 0 ? papers[0] : null;
-        savePapers();
         renderPaperList();
         updateContent();
     }
