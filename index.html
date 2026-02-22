@@ -456,9 +456,12 @@ function updateContent() {
         return;
     }
     if (currentPaper.parsed && currentPaper.original) {
-        document.getElementById("originalContent").innerHTML = currentPaper.original;
+        var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+        var content = currentPaper.original.replace(/\/api\/images\//g, apiUrl + '/api/images/');
+        document.getElementById("originalContent").innerHTML = content;
         if (currentPaper.translated) {
-            document.getElementById("translatedContent").innerHTML = currentPaper.translated;
+            var translated = currentPaper.translated.replace(/\/api\/images\//g, apiUrl + '/api/images/');
+            document.getElementById("translatedContent").innerHTML = translated;
         } else {
             document.getElementById("translatedContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"翻译"获取中文翻译</p>';
         }
@@ -514,7 +517,9 @@ function parsePaper() {
                         currentPaper.original = d2.text;
                         currentPaper.parsed = true;
                         savePapers();
-                        document.getElementById('originalContent').innerHTML = d2.text;
+                        var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+                        var content = d2.text.replace(/\/api\/images\//g, apiUrl + '/api/images/');
+                        document.getElementById('originalContent').innerHTML = content;
                         document.getElementById('analysisTitle').innerHTML = currentPaper.title;
                     } else {
                         alert('格式转换失败: ' + (d2.error || '未知错误'));
@@ -564,7 +569,9 @@ function parsePaper() {
                     currentPaper.original = d.text;
                     currentPaper.parsed = true;
                     savePapers();
-                    document.getElementById('originalContent').innerHTML = d.text;
+                    var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+                    var content = d.text.replace(/\/api\/images\//g, apiUrl + '/api/images/');
+                    document.getElementById('originalContent').innerHTML = content;
                     document.getElementById('analysisTitle').innerHTML = currentPaper.title;
                 } else {
                     alert('格式转换失败: ' + (d.error || '未知错误'));
@@ -624,7 +631,9 @@ function translatePaper() {
             currentPaper.translated = d.text;
             currentPaper.abstract = currentPaper.abstract || '';
             savePapers();
-            document.getElementById('translatedContent').innerHTML = d.text;
+            var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+            var translated = d.text.replace(/\/api\/images\//g, apiUrl + '/api/images/');
+            document.getElementById('translatedContent').innerHTML = translated;
         } else {
             alert('翻译失败: ' + (d.error || '未知错误'));
             document.getElementById('translatedContent').innerHTML = '<p style="color:var(--text-muted)">翻译失败</p>';
