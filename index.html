@@ -412,6 +412,7 @@ function initPapers() {
         })
         .then(function(d) {
             console.log('返回数据:', d);
+            console.log('数据类型:', typeof d);
             if (d && d.success && d.data) {
                 papers = d.data;
                 // 解析 tags 字符串为数组
