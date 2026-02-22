@@ -1,15 +1,12 @@
 {
-  "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "nixpacks": {
-      "image": "nixpacks/latest",
-      "apt": ["python3", "python3-pip", "curl"],
+      "image": "nixpacks/primary/node",
+      "apt": ["python3", "python3-pip"],
       "pip": ["requests"]
     }
   },
   "deploy": {
-    "numReplicas": 1,
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
+    "numReplicas": 1
   }
 }
