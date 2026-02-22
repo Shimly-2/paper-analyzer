@@ -433,7 +433,6 @@ if __name__ == "__main__":
     parser.add_argument("--arxiv", type=str, help="arXiv ID")
     parser.add_argument("--url", type=str, help="PDF URL")
     parser.add_argument("--file", type=str, help="本地 PDF 文件路径")
-    parser.add_argument("--file", type=str, help="本地 PDF 文件路径")
     parser.add_argument("--output", type=str, default="/tmp", help="输出目录")
     
     args = parser.parse_args()
