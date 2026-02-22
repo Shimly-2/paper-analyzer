@@ -205,9 +205,8 @@ function importPaper() {
     reader.onload = function(e) {
         try {
             var data = JSON.parse(e.target.result);
-            var papersList = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
-            var newId = papersList.length > 0 ? Math.max.apply(null, papersList.map(function(p){return p.id;})) + 1 : 1;
-            papersList.unshift({
+            var newId = papers.length > 0 ? Math.max.apply(null, papers.map(function(p){return p.id;})) + 1 : 1;
+            var newPaper = {
                 id: newId,
                 title: data.title || '未知论文',
                 arxiv: data.arxiv || '',
@@ -219,12 +218,12 @@ function importPaper() {
                 analysis: data.analysis || '',
                 peerReview: data.peerReview || '',
                 parsed: !!data.original
-            });
-            localStorage.setItem('paperLibrary', JSON.stringify(papersList));
-            papers = papersList;
+            };
+            papers.unshift(newPaper);
             currentPaper = papers[0];
             renderPaperList();
             updateContent();
+            savePapers(); // 保存到 SQLite
             hideImportModal();
             alert('导入成功: ' + data.title);
         } catch(err) { alert('导入失败: ' + err.message); }
@@ -392,46 +391,57 @@ function importPaper() {
 </div>
 </div>
 <script>
-var papers = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
-var currentPaper = papers.length > 0 ? papers[0] : null;
+var papers = [];
+var currentPaper = null;
 var currentFilter = "all";
 var selectedFiles = [];
 var pdfFiles = [];
 var customTags = [];
 
-function savePapers() { 
-    localStorage.setItem('paperLibrary', JSON.stringify(papers));
-    // 同步到后端 SQLite
-    var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
-    papers.forEach(function(p) {
-        fetch(apiUrl + '/api/papers', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(p)
-        }).catch(function(e) { console.error('保存到后端失败:', e); });
-    });
-}
-
-// 从后端加载论文
-function loadPapersFromBackend() {
+// 初始化：从 SQLite 加载论文
+function initPapers() {
     var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
     fetch(apiUrl + '/api/papers')
         .then(function(r) { return r.json(); })
         .then(function(d) {
-            if (d.success && d.data && d.data.length > 0) {
-                // 合并后端数据（保留本地更新的）
-                var backendPapers = d.data;
-                backendPapers.forEach(function(bp) {
-                    var exists = papers.some(function(p) { return p.id === bp.id; });
-                    if (!exists) {
-                        papers.push(bp);
+            if (d.success && d.data) {
+                papers = d.data;
+                // 解析 tags 字符串为数组
+                papers.forEach(function(p) {
+                    if (typeof p.tags === 'string') {
+                        try { p.tags = JSON.parse(p.tags); } catch(e) { p.tags = []; }
                     }
+                    if (!p.tags) p.tags = [];
                 });
-                localStorage.setItem('paperLibrary', JSON.stringify(papers));
+                currentPaper = papers.length > 0 ? papers[0] : null;
                 renderPapers();
+                updateContent();
             }
         })
-        .catch(function(e) { console.error('从后端加载失败:', e); });
+        .catch(function(e) { 
+            console.error('从后端加载失败:', e); 
+            // 后端失败时尝试 localStorage 后备
+            papers = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
+            currentPaper = papers.length > 0 ? papers[0] : null;
+            renderPapers();
+            updateContent();
+        });
+}
+
+function savePapers() { 
+    var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+    papers.forEach(function(p) {
+        // 确保 tags 是数组
+        var paperToSave = Object.assign({}, p);
+        if (Array.isArray(paperToSave.tags)) {
+            paperToSave.tags = paperToSave.tags;
+        }
+        fetch(apiUrl + '/api/papers', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(paperToSave)
+        }).catch(function(e) { console.error('保存到后端失败:', e); });
+    });
 }
 
 function renderFilterTags() {
@@ -471,11 +481,6 @@ function renderPaperList() {
                 '<div class="paper-status">' + status + '</div>' +
                 '</div>';
         }).join('');
-    }
-    // 从后端加载论文（只执行一次）
-    if (!window.papersLoadedFromBackend) {
-        window.papersLoadedFromBackend = true;
-        loadPapersFromBackend();
     }
 }
 
@@ -1211,6 +1216,9 @@ function importPaper() {
 }
 </script>
 <script>document.addEventListener("DOMContentLoaded", function() {
+    // 从 SQLite 加载论文
+    initPapers();
+    
     if (typeof renderMathInElement !== 'undefined') {
         renderMathInElement(document.body, {
             delimiters: [
