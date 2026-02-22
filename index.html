@@ -486,7 +486,7 @@ function parsePaper() {
     btn.innerHTML = '<span class="loading"></span> 解析中...';
     document.getElementById('originalContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在解析论文，请稍候...</p>';
     
-    var apiUrl = localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001';
+    var apiUrl = localStorage.getItem('apiUrl') || 'http://paper-analyzer-production-b4ac.up.railway.app';
     
     // Check if it's a PDF file
     if (currentPaper.arxiv === 'PDF' && currentPaper.pdfUrl) {
@@ -608,7 +608,7 @@ function translatePaper() {
     btn.innerHTML = '<span class="loading"></span> 翻译中...';
     document.getElementById('translatedContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在翻译论文，请稍候...</p>';
     
-    var apiUrl = localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001';
+    var apiUrl = localStorage.getItem('apiUrl') || 'http://paper-analyzer-production-b4ac.up.railway.app';
     // Fallback URLs
     var fallbackUrls = ['http://localhost:5001', 'http://127.0.0.1:5001'];
     var htmlContent = currentPaper.original;
@@ -775,7 +775,7 @@ function addPaper(){
         ids.forEach(function(id,i){newPapers.push({id:newId+i,title:"论文 " + id.trim(),arxiv:id.trim(),date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});});
     } else if(type === 'pdf' && pdfFiles && pdfFiles.length > 0){
         // Upload PDFs first
-        var apiUrl = localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001';
+        var apiUrl = localStorage.getItem('apiUrl') || 'http://paper-analyzer-production-b4ac.up.railway.app';
         var uploadPromises = pdfFiles.map(function(f, i) {
             var formData = new FormData();
             formData.append('file', f);
@@ -840,7 +840,7 @@ function sendMessage(){
         context = '论文标题: ' + (currentPaper.title || '') + '\n\n论文内容:\n' + currentPaper.original.substring(0, 196608);
     }
     
-    var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001');
+    var apiUrl = (localStorage.getItem('apiUrl') || 'http://paper-analyzer-production-b4ac.up.railway.app');
     fetch(apiUrl + '/api/chat', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -869,7 +869,7 @@ renderPaperList();
 updateContent();
 
 function showApiSettings(){
-    var url = prompt("请输入 API 服务器地址:", localStorage.getItem("apiUrl") || 'http://192.168.3.24:5001');
+    var url = prompt("请输入 API 服务器地址:", localStorage.getItem("apiUrl") || 'http://paper-analyzer-production-b4ac.up.railway.app');
     if(url){
         localStorage.setItem("apiUrl", url);
         alert("API 已更新为: " + url);
@@ -910,7 +910,7 @@ function generatePeerReview() {
     btn.disabled = true;
     document.getElementById('peerReviewContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在生成同行评审，请稍候...</p>';
     
-    var apiUrl = localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001';
+    var apiUrl = localStorage.getItem('apiUrl') || 'http://paper-analyzer-production-b4ac.up.railway.app';
     
     // First get peer review
     fetch(apiUrl + '/api/peerReview', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:currentPaper.title, abstract:currentPaper.abstract, content:document.getElementById('originalContent').innerHTML})})
@@ -956,7 +956,7 @@ function doSemanticSearch() {
     if (!query) { alert('请输入搜索关键词'); return; }
     document.getElementById('searchStats').innerHTML = '正在搜索...';
     document.getElementById('searchResults').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">搜索中，请稍候...</p>';
-    var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001') + '/api/semanticSearch';
+    var apiUrl = (localStorage.getItem('apiUrl') || 'http://paper-analyzer-production-b4ac.up.railway.app') + '/api/semanticSearch';
     fetch(apiUrl, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:query, sort:document.getElementById('sortBy').value})})
     .then(function(r){return r.json();})
     .then(function(d){
@@ -991,7 +991,7 @@ function doSemanticSearch() {
 function importSearchPaper(paperId, title, hasArxiv) {
     var papersList = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
     var paperTitle = title ? decodeURIComponent(title) : '论文 ' + paperId;
-    var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001');
+    var apiUrl = (localStorage.getItem('apiUrl') || 'http://paper-analyzer-production-b4ac.up.railway.app');
     
     // Check if paperId is valid arXiv format
     var isValidArxiv = paperId && paperId.match(/^\d{4}\.\d{4,5}$/);
@@ -1058,7 +1058,7 @@ function generateAnalysis() {
     btn.disabled = true;
     document.getElementById('analysisContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在生成分析报告，请稍候...</p>';
     
-    var apiUrl = localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001';
+    var apiUrl = localStorage.getItem('apiUrl') || 'http://paper-analyzer-production-b4ac.up.railway.app';
     // Fallback URLs
     var fallbackUrls = ['http://localhost:5001', 'http://127.0.0.1:5001'];
     
