@@ -427,6 +427,7 @@ function initPapers() {
         })
         .catch(function(e) { 
             console.error('从后端加载失败:', e); 
+            console.log('使用 localStorage 后备');
             // 后端失败时尝试 localStorage 后备
             try {
                 papers = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
