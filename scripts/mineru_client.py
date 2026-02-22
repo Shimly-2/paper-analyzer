@@ -170,6 +170,245 @@ def parse_url(pdf_url: str, token: Optional[str] = None, output_dir: Optional[st
     except Exception as e:
         return {"success": False, "error": f"错误: {str(e)}"}
 
+def parse_local_file(file_path: str, token: Optional[str] = None, output_dir: Optional[str] = None) -> Dict[str, Any]:
+    """
+    解析本地 PDF 文件
+    
+    Args:
+        file_path: 本地 PDF 文件路径
+        token: MinerU API Token
+        output_dir: 输出目录
+    
+    Returns:
+        解析结果字典
+    """
+    if not token:
+        token = get_token()
+    
+    if not token:
+        return {"success": False, "error": "未配置 MinerU token"}
+    
+    import requests
+    
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    
+    # Step 1: 获取上传 URL
+    data = {
+        "files": [{"name": os.path.basename(file_path), "data_id": os.path.basename(file_path)}],
+        "model_version": "vlm"
+    }
+    
+    try:
+        response = requests.post(
+            "https://mineru.net/api/v4/file-urls/batch",
+            headers=headers,
+            json=data,
+            timeout=30
+        )
+        
+        if response.status_code != 200:
+            return {"success": False, "error": f"请求失败: {response.status_code}"}
+        
+        result = response.json()
+        
+        if result.get("code") != 0:
+            return {"success": False, "error": result.get("msg", "API错误")}
+        
+        upload_url = result["data"]["file_urls"][0]
+        
+        # Step 2: 上传文件
+        with open(file_path, 'rb') as f:
+            upload_response = requests.put(upload_url, data=f, timeout=120)
+        
+        if upload_response.status_code != 200:
+            return {"success": False, "error": f"文件上传失败: {upload_response.status_code}"}
+        
+        # Step 3: 提交解析任务
+        task_data = {
+            "url": upload_url.split('?')[0],
+            "model_version": "vlm"
+        }
+        
+        task_response = requests.post(
+            "https://mineru.net/api/v4/extract/task",
+            headers=headers,
+            json=task_data,
+            timeout=30
+        )
+        
+        task_result = task_response.json()
+        
+        if task_result.get("code") != 0:
+            return {"success": False, "error": task_result.get("msg", "提交任务失败")}
+        
+        task_id = task_result["data"]["task_id"]
+        
+        # Step 4: 轮询等待结果
+        for i in range(60):
+            time.sleep(3)
+            check_response = requests.get(
+                f"https://mineru.net/api/v4/extract/task/{task_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if check_response.status_code == 200:
+                check_data = check_response.json()
+                if check_data.get("code") == 0:
+                    state = check_data["data"].get("state")
+                    
+                    if state == "done":
+                        # 获取完整结果
+                        if check_data["data"].get("markdown"):
+                            return {
+                                "success": True,
+                                "data": {
+                                    "markdown": check_data["data"]["markdown"]
+                                }
+                            }
+                        else:
+                            return {"success": False, "error": "解析结果为空"}
+                    
+                    elif state == "failed":
+                        return {
+                            "success": False,
+                            "error": "解析失败",
+                            "detail": check_data["data"].get("err_msg", "")
+                        }
+        
+        return {"success": False, "error": "解析超时"}
+        
+    except requests.exceptions.Timeout:
+        return {"success": False, "error": "请求超时"}
+    except requests.exceptions.RequestException as e:
+        return {"success": False, "error": f"网络错误: {str(e)}"}
+    except Exception as e:
+        return {"success": False, "error": f"错误: {str(e)}"}
+
+
+def parse_local_file(file_path: str, token: Optional[str] = None, output_dir: Optional[str] = None) -> Dict[str, Any]:
+    """
+    解析本地 PDF 文件
+    
+    Args:
+        file_path: 本地 PDF 文件路径
+        token: MinerU API Token
+        output_dir: 输出目录
+    
+    Returns:
+        解析结果字典
+    """
+    if not token:
+        token = get_token()
+    
+    if not token:
+        return {"success": False, "error": "未配置 MinerU token"}
+    
+    if not os.path.exists(file_path):
+        return {"success": False, "error": f"文件不存在: {file_path}"}
+    
+    import requests
+    
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    
+    # Step 1: 获取上传 URL
+    data = {
+        "files": [{"name": os.path.basename(file_path), "data_id": os.path.basename(file_path)}],
+        "model_version": "vlm"
+    }
+    
+    try:
+        response = requests.post(
+            "https://mineru.net/api/v4/file-urls/batch",
+            headers=headers,
+            json=data,
+            timeout=30
+        )
+        
+        if response.status_code != 200:
+            return {"success": False, "error": f"请求失败: {response.status_code}"}
+        
+        result = response.json()
+        
+        if result.get("code") != 0:
+            return {"success": False, "error": result.get("msg", "API错误")}
+        
+        upload_url = result["data"]["file_urls"][0]
+        
+        # Step 2: 上传文件
+        with open(file_path, 'rb') as f:
+            upload_response = requests.put(upload_url, data=f, timeout=120)
+        
+        if upload_response.status_code != 200:
+            return {"success": False, "error": f"文件上传失败: {upload_response.status_code}"}
+        
+        # Step 3: 提交解析任务
+        task_data = {
+            "url": upload_url.split('?')[0],
+            "model_version": "vlm"
+        }
+        
+        task_response = requests.post(
+            "https://mineru.net/api/v4/extract/task",
+            headers=headers,
+            json=task_data,
+            timeout=30
+        )
+        
+        task_result = task_response.json()
+        
+        if task_result.get("code") != 0:
+            return {"success": False, "error": task_result.get("msg", "提交任务失败")}
+        
+        task_id = task_result["data"]["task_id"]
+        
+        # Step 4: 轮询等待结果
+        for i in range(60):
+            time.sleep(3)
+            check_response = requests.get(
+                f"https://mineru.net/api/v4/extract/task/{task_id}",
+                headers=headers,
+                timeout=30
+            )
+            
+            if check_response.status_code == 200:
+                check_data = check_response.json()
+                if check_data.get("code") == 0:
+                    state = check_data["data"].get("state")
+                    
+                    if state == "done":
+                        # 返回 markdown
+                        markdown = check_data["data"].get("markdown", "")
+                        return {
+                            "success": True,
+                            "data": {
+                                "markdown": markdown
+                            }
+                        }
+                    
+                    elif state == "failed":
+                        return {
+                            "success": False,
+                            "error": "解析失败",
+                            "detail": check_data["data"].get("err_msg", "")
+                        }
+        
+        return {"success": False, "error": "解析超时"}
+        
+    except requests.exceptions.Timeout:
+        return {"success": False, "error": "请求超时"}
+    except requests.exceptions.RequestException as e:
+        return {"success": False, "error": f"网络错误: {str(e)}"}
+    except Exception as e:
+        return {"success": False, "error": f"错误: {str(e)}"}
+
+
 def parse_arxiv(arxiv_id: str, token: Optional[str] = None, output_dir: Optional[str] = None) -> Dict[str, Any]:
     """
     解析 arXiv 论文
@@ -193,6 +432,8 @@ if __name__ == "__main__":
     parser.add_argument("--token", type=str, help="MinerU API Token")
     parser.add_argument("--arxiv", type=str, help="arXiv ID")
     parser.add_argument("--url", type=str, help="PDF URL")
+    parser.add_argument("--file", type=str, help="本地 PDF 文件路径")
+    parser.add_argument("--file", type=str, help="本地 PDF 文件路径")
     parser.add_argument("--output", type=str, default="/tmp", help="输出目录")
     
     args = parser.parse_args()
@@ -206,7 +447,10 @@ if __name__ == "__main__":
     
     # 执行解析
     result = None
-    if args.arxiv:
+    if args.file:
+        print(f"正在解析本地文件: {args.file} ...")
+        result = parse_local_file(args.file, output_dir=args.output)
+    elif args.arxiv:
         print(f"正在解析 arXiv: {args.arxiv} ...")
         result = parse_arxiv(args.arxiv, output_dir=args.output)
     elif args.url:
