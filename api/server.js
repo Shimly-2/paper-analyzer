@@ -361,7 +361,7 @@ const server = http.createServer((req, res) => {
 - 块级公式（独立一行）：用 $$公式$$，使用KaTeX来在HTML中渲染公式，KaTeX会自动渲染为行间公式（display模式）
 - 行内公式（句子中）：用 $公式$，使用KaTeX来在HTML中渲染公式，KaTeX会自动渲染为行内公式
    - KaTeX会自动渲染公式
-5. 图片URL：http://192.168.3.24:5001/api/images/图片名.jpg
+5. 图片URL：/api/images/图片名.jpg
 6. 表格：<table border="1" style="border-collapse:collapse;width:100%;margin:12px 0;background:#2d2d2d;color:#f8f8f2;border-radius:8px"><tr style="background:#1a1a1a"><td style="padding:12px;border:1px solid #444;font-weight:bold">表头</td></tr><tr><td style="padding:12px;border:1px solid #444">内容</td></tr></table>
 7. 段落：<p style="margin:12px 0;line-height:1.8">文字</p>
 8. 列表：<ul><li>项目</li></ul>
@@ -379,14 +379,14 @@ const server = http.createServer((req, res) => {
 <p style="margin:12px 0;line-height:1.8">段落内容</p>
 <h2 style="font-size:20px;margin:14px 0;font-weight:bold">章节标题</h2>
 <div style="text-align:center;margin:16px 0">$$公式$$</div>
-<p style="text-align:center"><img src="http://192.168.3.24:5001/api/images/xxx.jpg" style="max-width:100%"></p>
+<p style="text-align:center"><img src="/api/images/xxx.jpg" style="max-width:100%"></p>
 <table style="width:100%;border-collapse:collapse;margin:12px 0"><tr><td style="padding:8px;border:1px solid #ddd">内容</td></tr></table>
 <ul style="margin:12px 0;padding-left:24px"><li>列表项</li></ul>
 
 论文标题: ${title || ''}
 内容：${markdown}`;
 
-                callMiniMax(prompt, '你是一个严格的HTML转换器。只输出纯HTML块级元素，使用KaTeX公式语法（$$块级$，行内$）。所有内容从上到下纵向排列。图片URL用http://192.168.3.24:5001/api/images/图片名.jpg。禁止flex/grid/float布局。', (result) => {
+                callMiniMax(prompt, '你是一个严格的HTML转换器。只输出纯HTML块级元素，使用KaTeX公式语法（$$块级$，行内$）。所有内容从上到下纵向排列。图片URL用/api/images/图片名.jpg。禁止flex/grid/float布局。', (result) => {
                     res.writeHead(200, {'Content-Type':'application/json'});
                     res.end(JSON.stringify(result.success ? {success:true, text:result.text} : {success:false, error:result.error}));
                 });
