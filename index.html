@@ -717,6 +717,7 @@ function translatePaper() {
 
 function deletePaper(id) {
     if(confirm("确定删除这篇论文？")) {
+        var apiUrl = 'http://192.168.3.24:5001';
         // 调用后端 DELETE API
         fetch(apiUrl + '/api/papers/' + id, {method: 'DELETE'})
             .then(function(r) { return r.json(); })
