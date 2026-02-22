@@ -428,7 +428,11 @@ function initPapers() {
         .catch(function(e) { 
             console.error('从后端加载失败:', e); 
             // 后端失败时尝试 localStorage 后备
-            papers = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
+            try {
+                papers = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
+            } catch(e2) {
+                papers = [];
+            }
             currentPaper = papers.length > 0 ? papers[0] : null;
             renderPaperList();
             updateContent();
@@ -436,7 +440,8 @@ function initPapers() {
 }
 
 function savePapers() { 
-    var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = localStorage.getItem('apiUrl');
+    if (!apiUrl) apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
     papers.forEach(function(p) {
         // 确保 tags 是数组
         var paperToSave = Object.assign({}, p);
@@ -447,7 +452,12 @@ function savePapers() {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(paperToSave)
-        }).catch(function(e) { console.error('保存到后端失败:', e); });
+        })
+        .then(function(r) { 
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json(); 
+        })
+        .catch(function(e) { console.error('保存到后端失败:', e); });
     });
 }
 
