@@ -3,10 +3,33 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const db = require('./db');
 
 const TOKEN_FILE = path.join(__dirname, '..', 'config', 'mineru_token.txt');
 const MINIMAX_TOKEN_FILE = path.join(__dirname, '..', 'config', 'minimax_token.txt');
 const PYTHON_SCRIPT = path.join(__dirname, '..', 'scripts', 'mineru_client.py');
+
+// 把图片转成 base64 并嵌入 markdown
+function convertImagesToBase64(markdown) {
+    if (!markdown) return markdown;
+    
+    const imageRegex = /!\[([^\]]*)\]\(\/api\/images\/([^)]+)\)/g;
+    return markdown.replace(imageRegex, (match, alt, imgName) => {
+        const imgPath = path.join('/tmp', 'images', imgName);
+        try {
+            if (fs.existsSync(imgPath)) {
+                const data = fs.readFileSync(imgPath);
+                const base64 = data.toString('base64');
+                const ext = path.extname(imgName).toLowerCase();
+                const mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
+                return `<img src="data:${mimeType};base64,${base64}" alt="${alt}" style="max-width:100%">`;
+            }
+        } catch (e) {
+            console.error('转换图片失败:', imgName, e.message);
+        }
+        return match;
+    });
+}
 
 function getToken(file) {
     // Check environment variable first
@@ -19,7 +42,9 @@ function getToken(file) {
 }
 
 function parseWithPython(arxivId, callback) {
-    const proc = spawn('/app/venv/bin/python', ['-u', PYTHON_SCRIPT, '--arxiv', arxivId, '--output', '/tmp'], { cwd: path.dirname(PYTHON_SCRIPT) });
+    // Python 路径：本地用 python3，Railway Docker 里用 /app/venv/bin/python
+    const pythonCmd = process.env.PYTHON_PATH || 'python3';
+    const proc = spawn(pythonCmd, ['-u', PYTHON_SCRIPT, '--arxiv', arxivId, '--output', '/tmp'], { cwd: path.dirname(PYTHON_SCRIPT) });
     let output = '', error = '';
     proc.stdout.on('data', d => output += d);
     proc.stderr.on('data', d => error += d);
@@ -124,7 +149,9 @@ const server = http.createServer((req, res) => {
                                 if (match) title = match[1].trim();
                             }
                             res.writeHead(200, {'Content-Type':'application/json'}); 
-                            res.end(JSON.stringify({success:true, data:{id:arxivId, title:title, abstract:info.abstract, markdown:markdown}})); 
+                            // 转换图片为 base64
+                            const markdownWithImages = convertImagesToBase64(markdown);
+                            res.end(JSON.stringify({success:true, data:{id:arxivId, title:title, abstract:info.abstract, markdown:markdownWithImages}})); 
                         }
                     });
                 });
