@@ -17,6 +17,6 @@
     }
   },
   "deploy": {
-    "startCommand": "node --version && python3 --version && echo '双环境安装成功' && node api/server.js"
+    "startCommand": "node --version && /app/venv/bin/python --version && echo '双环境安装成功' && node api/server.js"
   }
 }
