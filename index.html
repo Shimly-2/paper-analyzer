@@ -414,7 +414,7 @@ function initPapers() {
                     if (!p.tags) p.tags = [];
                 });
                 currentPaper = papers.length > 0 ? papers[0] : null;
-                renderPapers();
+                renderPaperList();
                 updateContent();
             }
         })
@@ -423,7 +423,7 @@ function initPapers() {
             // 后端失败时尝试 localStorage 后备
             papers = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
             currentPaper = papers.length > 0 ? papers[0] : null;
-            renderPapers();
+            renderPaperList();
             updateContent();
         });
 }
