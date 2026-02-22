@@ -400,9 +400,10 @@ var customTags = [];
 
 // 初始化：从 SQLite 加载论文
 function initPapers() {
-    var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = localStorage.getItem('apiUrl');
+    if (!apiUrl) apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+    console.log('apiUrl:', apiUrl);
     var papersUrl = apiUrl + '/api/papers';
-    console.log('请求论文列表:', papersUrl);
     fetch(papersUrl)
         .then(function(r) { 
             console.log('响应状态:', r.status, r.statusText);
