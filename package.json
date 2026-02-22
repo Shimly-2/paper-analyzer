@@ -1,5 +1,11 @@
 {
   "name": "paper-analyzer",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "scripts": {
+    "start": "node api/server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
 }

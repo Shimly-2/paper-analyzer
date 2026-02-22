@@ -9,6 +9,9 @@ const MINIMAX_TOKEN_FILE = path.join(__dirname, '..', 'config', 'minimax_token.t
 const PYTHON_SCRIPT = path.join(__dirname, '..', 'scripts', 'mineru_client.py');
 
 function getToken(file) {
+    // Check environment variable first
+    if (process.env.MINERU_TOKEN) return process.env.MINERU_TOKEN;
+    if (process.env.MINIMAX_TOKEN) return process.env.MINIMAX_TOKEN;
     try {
         if (fs.existsSync(file)) return fs.readFileSync(file, 'utf8').trim();
     } catch(e) {}
