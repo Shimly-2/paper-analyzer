@@ -515,8 +515,9 @@ const server = http.createServer((req, res) => {
     
     // Get all papers from SQLite
     if (url.pathname === '/api/papers' && req.method === 'GET') {
+        console.log('收到 /api/papers 请求');
         db.all('SELECT * FROM papers ORDER BY updatedAt DESC', [], (err, rows) => {
-            if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+            if (err) { console.error('数据库错误:', err); res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
             else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true, data:rows})); }
         });
         return;
