@@ -399,7 +399,40 @@ var selectedFiles = [];
 var pdfFiles = [];
 var customTags = [];
 
-function savePapers() { localStorage.setItem('paperLibrary', JSON.stringify(papers)); }
+function savePapers() { 
+    localStorage.setItem('paperLibrary', JSON.stringify(papers));
+    // 同步到后端 SQLite
+    var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+    papers.forEach(function(p) {
+        fetch(apiUrl + '/api/papers', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(p)
+        }).catch(function(e) { console.error('保存到后端失败:', e); });
+    });
+}
+
+// 从后端加载论文
+function loadPapersFromBackend() {
+    var apiUrl = localStorage.getItem('apiUrl') || 'https://arlene-unprompted-janette.ngrok-free.dev';
+    fetch(apiUrl + '/api/papers')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.success && d.data && d.data.length > 0) {
+                // 合并后端数据（保留本地更新的）
+                var backendPapers = d.data;
+                backendPapers.forEach(function(bp) {
+                    var exists = papers.some(function(p) { return p.id === bp.id; });
+                    if (!exists) {
+                        papers.push(bp);
+                    }
+                });
+                localStorage.setItem('paperLibrary', JSON.stringify(papers));
+                renderPapers();
+            }
+        })
+        .catch(function(e) { console.error('从后端加载失败:', e); });
+}
 
 function renderFilterTags() {
     var allTags = new Set();
@@ -438,6 +471,11 @@ function renderPaperList() {
                 '<div class="paper-status">' + status + '</div>' +
                 '</div>';
         }).join('');
+    }
+    // 从后端加载论文（只执行一次）
+    if (!window.papersLoadedFromBackend) {
+        window.papersLoadedFromBackend = true;
+        loadPapersFromBackend();
     }
 }
 
