@@ -4,15 +4,19 @@
     "nixpacks": {
       "providers": ["node", "python"],
       "phases": {
+        "install": {
+          "commands": [
+            "npm install",
+            "pip3 install -r requirements.txt"
+          ]
+        },
         "setup": {
-          "nixPkgs": ["python311", "python311Packages.pip"],
-          "commands": ["pip install -r requirements.txt"],
-          "nodeCommands": ["npm install"]
+          "nixPkgs": ["nodejs_20", "python311", "python311Packages.pip"]
         }
       }
     }
   },
   "deploy": {
-    "startCommand": "node --version && python3 --version && node api/server.js"
+    "startCommand": "node --version && python3 --version && echo '双环境安装成功' && node api/server.js"
   }
 }
