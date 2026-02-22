@@ -475,4 +475,4 @@ const server = http.createServer((req, res) => {
 });
 
 
-server.listen(5001, '0.0.0.0', () => console.log('Server: http://0.0.0.0:5001'));
+server.listen(process.env.PORT || 5001, '0.0.0.0', () => console.log('Server: http://0.0.0.0:5001'));
