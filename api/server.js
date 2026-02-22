@@ -173,7 +173,7 @@ const server = http.createServer((req, res) => {
                 const { title, abstract, content } = JSON.parse(body);
                 if (!content) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:'no content'})); return; }
                 
-                const prompt = `请对以下学术论文进行深度分析，包括：\n\n1. 研究背景与动机\n2. 核心创新点\n3. 方法论\n4. 实验结果\n5. 局限性\n6. 潜在应用方向\n\n论文标题: ${title || ''}\n\n摘要: ${abstract || ''}\n\n正文: ${content.substring(0, 8000)}`;
+                const prompt = `请对以下学术论文进行深度分析，包括：\n\n1. 研究背景与动机\n2. 核心创新点\n3. 方法论\n4. 实验结果\n5. 局限性\n6. 潜在应用方向\n\n论文标题: ${title || ''}\n\n摘要: ${abstract || ''}\n\n正文: ${content}`;
                 callMiniMax(prompt, '你是一个专业的AI学术论文分析师，擅长深度分析论文的核心贡献、方法论和价值。', (result) => {
                     res.writeHead(200, {'Content-Type':'application/json'});
                     res.end(JSON.stringify(result.success ? {success:true, text:result.text} : {success:false, error:result.error}));
@@ -250,7 +250,7 @@ const server = http.createServer((req, res) => {
 
 论文标题: ${title || ''}
 摘要: ${abstract || ''}
-正文: ${content.substring(0, 15000)}`;
+正文: ${content}`;
 
                 callMiniMax(prompt, '你是一个专业的学术论文同行评审专家。系统评估论文的方法学、统计严谨性、结果报告和研究价值。输出结构化HTML格式。', (result) => {
                     res.writeHead(200, {'Content-Type':'application/json'});

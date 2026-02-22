@@ -203,7 +203,7 @@ function importPaper() {
     reader.onload = function(e) {
         try {
             var data = JSON.parse(e.target.result);
-            var papersList = JSON.parse(localStorage.getItem('papers') || '[]');
+            var papersList = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
             var newId = papersList.length > 0 ? Math.max.apply(null, papersList.map(function(p){return p.id;})) + 1 : 1;
             papersList.unshift({
                 id: newId,
@@ -218,7 +218,7 @@ function importPaper() {
                 peerReview: data.peerReview || '',
                 parsed: !!data.original
             });
-            localStorage.setItem('papers', JSON.stringify(papersList));
+            localStorage.setItem('paperLibrary', JSON.stringify(papersList));
             papers = papersList;
             currentPaper = papers[0];
             renderPaperList();
@@ -270,7 +270,7 @@ function importPaper() {
     reader.onload = function(e) {
         try {
             var data = JSON.parse(e.target.result);
-            var papersList = JSON.parse(localStorage.getItem('papers') || '[]');
+            var papersList = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
             var newId = papersList.length > 0 ? Math.max.apply(null, papersList.map(function(p){return p.id;})) + 1 : 1;
             papersList.unshift({
                 id: newId,
@@ -285,7 +285,7 @@ function importPaper() {
                 peerReview: data.peerReview || '',
                 parsed: !!data.original
             });
-            localStorage.setItem('papers', JSON.stringify(papersList));
+            localStorage.setItem('paperLibrary', JSON.stringify(papersList));
             papers = papersList;
             currentPaper = papers[0];
             renderPaperList();
@@ -805,16 +805,45 @@ function generatePeerReview() {
     var btn = document.getElementById('peerReviewBtn');
     btn.innerHTML = '<span class="loading"></span> 评审中...';
     btn.disabled = true;
-    var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001') + '/api/peerReview';
-    fetch(apiUrl, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:currentPaper.title, abstract:currentPaper.abstract, content:document.getElementById('originalContent').innerHTML})})
+    document.getElementById('peerReviewContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在生成同行评审，请稍候...</p>';
+    
+    var apiUrl = localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001';
+    
+    // First get peer review
+    fetch(apiUrl + '/api/peerReview', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:currentPaper.title, abstract:currentPaper.abstract, content:document.getElementById('originalContent').innerHTML})})
     .then(function(r){return r.json();})
     .then(function(d){
         if(d.success && d.text){
-            document.getElementById('peerReviewContent').innerHTML = '<div class="analysis-section">'+d.text+'</div>';
+            // Then convert to HTML
+            btn.innerHTML = '<span class="loading"></span> 格式转换中...';
+            fetch(apiUrl + '/api/convert', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({markdown: d.text, title: '同行评审'})
+            })
+            .then(function(r2){return r2.json();})
+            .then(function(d2){
+                if(d2.success && d2.text){
+                    currentPaper.peerReview = d2.text;
+                    savePapers();
+                    document.getElementById('peerReviewContent').innerHTML = '<div class="analysis-section">'+d2.text+'</div>';
+                } else {
+                    currentPaper.peerReview = d.text;
+                    savePapers();
+                    document.getElementById('peerReviewContent').innerHTML = '<div class="analysis-section">'+d.text+'</div>';
+                }
+                btn.innerHTML = '生成同行评审'; btn.disabled = false;
+            })
+            .catch(function(e2){
+                currentPaper.peerReview = d.text;
+                savePapers();
+                document.getElementById('peerReviewContent').innerHTML = '<div class="analysis-section">'+d.text+'</div>';
+                btn.innerHTML = '生成同行评审'; btn.disabled = false;
+            });
         } else {
             alert('评审失败: '+(d.error||'未知'));
+            btn.innerHTML = '生成同行评审'; btn.disabled = false;
         }
-        btn.innerHTML = '生成同行评审'; btn.disabled = false;
     })
     .catch(function(e){alert('网络错误: '+e.message);btn.innerHTML='生成同行评审';btn.disabled=false;});
 }
@@ -1004,7 +1033,7 @@ function importPaper() {
     reader.onload = function(e) {
         try {
             var data = JSON.parse(e.target.result);
-            var papersList = JSON.parse(localStorage.getItem('papers') || '[]');
+            var papersList = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
             var newId = papersList.length > 0 ? Math.max.apply(null, papersList.map(function(p){return p.id;})) + 1 : 1;
             papersList.unshift({
                 id: newId,
@@ -1019,7 +1048,7 @@ function importPaper() {
                 peerReview: data.peerReview || '',
                 parsed: !!data.original
             });
-            localStorage.setItem('papers', JSON.stringify(papersList));
+            localStorage.setItem('paperLibrary', JSON.stringify(papersList));
             papers = papersList;
             currentPaper = papers[0];
             renderPaperList();
@@ -1081,7 +1110,7 @@ function importPaper() {
     reader.onload = function(e) {
         try {
             var data = JSON.parse(e.target.result);
-            var papersList = JSON.parse(localStorage.getItem('papers') || '[]');
+            var papersList = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
             var newId = papersList.length > 0 ? Math.max.apply(null, papersList.map(function(p){return p.id;})) + 1 : 1;
             papersList.unshift({
                 id: newId,
@@ -1096,7 +1125,7 @@ function importPaper() {
                 peerReview: data.peerReview || '',
                 parsed: !!data.original
             });
-            localStorage.setItem('papers', JSON.stringify(papersList));
+            localStorage.setItem('paperLibrary', JSON.stringify(papersList));
             papers = papersList;
             currentPaper = papers[0];
             renderPaperList();
