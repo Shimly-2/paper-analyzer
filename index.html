@@ -411,7 +411,8 @@ function initPapers() {
             return r.json(); 
         })
         .then(function(d) {
-            if (d.success && d.data) {
+            console.log('返回数据:', d);
+            if (d && d.success && d.data) {
                 papers = d.data;
                 // 解析 tags 字符串为数组
                 papers.forEach(function(p) {
