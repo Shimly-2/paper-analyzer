@@ -17,6 +17,6 @@
     }
   },
   "deploy": {
-    "startCommand": "source /app/venv/bin/activate && echo $PATH && python --version && echo '双环境安装成功' && node api/server.js"
+    "startCommand": ". /app/venv/bin/activate && echo $PATH && python --version && echo '双环境安装成功' && node api/server.js"
   }
 }
