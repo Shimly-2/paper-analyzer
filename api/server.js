@@ -19,7 +19,7 @@ function getToken(file) {
 }
 
 function parseWithPython(arxivId, callback) {
-    const proc = spawn('python3', ['-u', PYTHON_SCRIPT, '--arxiv', arxivId, '--output', '/tmp'], { cwd: path.dirname(PYTHON_SCRIPT) });
+    const proc = spawn('/app/venv/bin/python', ['-u', PYTHON_SCRIPT, '--arxiv', arxivId, '--output', '/tmp'], { cwd: path.dirname(PYTHON_SCRIPT) });
     let output = '', error = '';
     proc.stdout.on('data', d => output += d);
     proc.stderr.on('data', d => error += d);
