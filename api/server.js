@@ -31,6 +31,34 @@ function convertImagesToBase64(markdown) {
     });
 }
 
+// 转换 HTML 中的图片为 base64（处理 MiniMax 返回的 HTML）
+function convertHtmlImagesToBase64(html) {
+    if (!html) return html;
+    
+    // 匹配各种可能的图片 URL 格式
+    const imageRegex = /<img[^>]*src=["']([^"']+)["'][^>]*>/gi;
+    return html.replace(imageRegex, (match, src) => {
+        // 如果已经是 base64，直接返回
+        if (src.startsWith('data:')) return match;
+        
+        // 提取图片文件名
+        const imgName = src.split('/').pop();
+        const imgPath = path.join('/tmp', 'images', imgName);
+        try {
+            if (fs.existsSync(imgPath)) {
+                const data = fs.readFileSync(imgPath);
+                const base64 = data.toString('base64');
+                const ext = path.extname(imgName).toLowerCase();
+                const mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
+                return `<img src="data:${mimeType};base64,${base64}" style="max-width:100%">`;
+            }
+        } catch (e) {
+            console.error('转换HTML图片失败:', imgName, e.message);
+        }
+        return match;
+    });
+}
+
 function getToken(file) {
     // Check environment variable first
     if (process.env.MINERU_TOKEN) return process.env.MINERU_TOKEN;
@@ -414,6 +442,10 @@ const server = http.createServer((req, res) => {
 内容：${markdown}`;
 
                 callMiniMax(prompt, '你是一个严格的HTML转换器。只输出纯HTML块级元素，使用KaTeX公式语法（$$块级$，行内$）。所有内容从上到下纵向排列。图片URL用/api/images/图片名.jpg。禁止flex/grid/float布局。', (result) => {
+                    // 转换 HTML 中的图片为 base64
+                    if (result.success && result.text) {
+                        result.text = convertHtmlImagesToBase64(result.text);
+                    }
                     res.writeHead(200, {'Content-Type':'application/json'});
                     res.end(JSON.stringify(result.success ? {success:true, text:result.text} : {success:false, error:result.error}));
                 });
