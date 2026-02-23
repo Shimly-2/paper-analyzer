@@ -31,7 +31,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .toggle-right{right:300px;border-radius:6px 0 0 6px;transition:right 0.3s ease}
 .toggle-right.collapsed{right:0}
 .sidebar-header{padding:16px;border-bottom:1px solid var(--border-color)}
-.search-input{width:100%;padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:13px;margin-bottom:12px}
+.search-input{width:100%;padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:16px;margin-bottom:12px}
 .filter-tags{display:flex;flex-wrap:wrap;gap:6px}
 .filter-tag{padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;border:1px solid transparent}
 .filter-tag.active{background:var(--blue);color:white}
@@ -126,7 +126,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .modal-body{padding:20px}
 .form-group{margin-bottom:16px}
 .form-label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px}
-.form-input,.form-select,.form-textarea{width:100%;padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:13px}
+.form-input,.form-select,.form-textarea{width:100%;padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:16px}
 .form-textarea{min-height:100px;resize:vertical}
 .form-file{width:100%;padding:20px;background:var(--bg-tertiary);border:2px dashed var(--border-color);border-radius:6px;text-align:center;cursor:pointer}
 .form-file:hover{border-color:var(--accent)}
@@ -938,20 +938,20 @@ function toggleSidebar(side) {
     var right = document.getElementById('sidebarRight');
     var tl = document.getElementById('toggleLeft');
     var tr = document.getElementById('toggleRight');
+    var isMobile = window.innerWidth <= 1024;
+    
     if(side === 'left'){
         left.classList.toggle('collapsed');
         tl.classList.toggle('collapsed');
         tl.innerHTML = left.classList.contains('collapsed') ? '&#8250;' : '&#8249;';
-        // 窄屏模式下用transform控制显隐
-        if(window.innerWidth <= 1024) {
+        if(isMobile) {
             left.style.transform = left.classList.contains('collapsed') ? 'translateX(-100%)' : 'translateX(0)';
         }
     } else {
         right.classList.toggle('collapsed');
         tr.classList.toggle('collapsed');
         tr.innerHTML = right.classList.contains('collapsed') ? '&#8249;' : '&#8250;';
-        // 窄屏模式下用transform控制显隐
-        if(window.innerWidth <= 1024) {
+        if(isMobile) {
             right.style.transform = right.classList.contains('collapsed') ? 'translateX(100%)' : 'translateX(0)';
         }
     }
