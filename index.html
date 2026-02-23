@@ -524,7 +524,7 @@ function loadChatMessages() {
                     m.innerHTML = '<div class="chat-bubble">新对话开始，请提问。</div>';
                 } else {
                     m.innerHTML = d.data.map(function(msg){
-                        return '<div class="chat-bubble' + (msg.role === 'user' ? ' user' : '') + '">' + msg.content + '</div>';
+                        return '<div class="chat-bubble' + (msg.role === 'user' ? ' user' : '') + '">' + (msg.role === 'assistant' ? parseMarkdown(msg.content) : msg.content) + '</div>';
                     }).join('');
                 }
                 m.scrollTop = m.scrollHeight;
@@ -1091,6 +1091,30 @@ function addPaper(){
     }
 }
 
+function parseMarkdown(text) {
+    if (!text) return text;
+    // 转义 HTML 标签
+    text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // 标题
+    text = text.replace(/^### (.+)$/gm, '<h4 style="margin:12px 0 6px 0;font-size:14px;font-weight:600">$1</h4>');
+    text = text.replace(/^## (.+)$/gm, '<h3 style="margin:14px 0 8px 0;font-size:16px;font-weight:600">$1</h3>');
+    text = text.replace(/^# (.+)$/gm, '<h2 style="margin:16px 0 10px 0;font-size:18px;font-weight:600">$1</h2>');
+    // 加粗
+    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // 斜体
+    text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    // 代码
+    text = text.replace(/`(.+?)`/g, '<code style="background:#eee;color:#333;padding:1px 4px;border-radius:3px">$1</code>');
+    // 无序列表
+    text = text.replace(/^- (.+)$/gm, '<li style="margin:4px 0">$1</li>');
+    text = text.replace(/(<li[^>]*>.*<\/li>)\n?/g, '<ul style="margin:8px 0;padding-left:20px">$1</ul>');
+    // 数字列表
+    text = text.replace(/^\d+\. (.+)$/gm, '<li style="margin:4px 0">$1</li>');
+    // 换行
+    text = text.replace(/\n/g, '<br>');
+    return text;
+}
+
 function askQuestion(btn){document.getElementById('chatInput').value = btn.textContent;sendMessage();}
 function sendMessage(){
     var input = document.getElementById('chatInput');
@@ -1146,7 +1170,7 @@ function sendToChatApi(sessionUuid, msg, apiUrl, m) {
         var bubbles = m.querySelectorAll('.chat-bubble');
         var lastBubble = bubbles[bubbles.length - 1];
         if(d.success && d.text){
-            lastBubble.innerHTML = d.text;
+            lastBubble.innerHTML = parseMarkdown(d.text);
         } else {
             lastBubble.innerHTML = '回答失败: ' + (d.error || '未知错误');
         }
