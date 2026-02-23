@@ -73,7 +73,33 @@ db.serialize(() => {
     )
   `, (err) => {
     if (err) console.error('创建paper_images表失败:', err);
-    else console.log('数据库初始化完成:', DB_PATH);
+  });
+  
+  // 对话会话表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS chat_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      uuid TEXT UNIQUE NOT NULL,
+      paper_id INTEGER,
+      title TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `, (err) => {
+    if (err) console.error('创建chat_sessions表失败:', err);
+  });
+  
+  // 消息记录表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS chat_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_uuid TEXT NOT NULL,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `, (err) => {
+    if (err) console.error('创建chat_messages表失败:', err);
   });
   
   // 检查并迁移旧数据

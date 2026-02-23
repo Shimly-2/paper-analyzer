@@ -586,6 +586,121 @@ const server = http.createServer((req, res) => {
         return;
     }
     
+    // ===== 对话会话 API =====
+    
+    // 获取所有会话列表
+    if (url.pathname === '/api/chat/sessions' && req.method === 'GET') {
+        db.all('SELECT * FROM chat_sessions ORDER BY updated_at DESC', [], (err, rows) => {
+            if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+            else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true, data:rows})); }
+        });
+        return;
+    }
+    
+    // 创建新会话
+    if (url.pathname === '/api/chat/sessions' && req.method === 'POST') {
+        let body = '';
+        req.on('data', c => body += c);
+        req.on('end', () => {
+            try {
+                const data = JSON.parse(body);
+                const uuid = 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                const title = data.title || '新对话';
+                const paperId = data.paper_id || null;
+                
+                db.run('INSERT INTO chat_sessions (uuid, paper_id, title) VALUES (?, ?, ?)', [uuid, paperId, title], (err) => {
+                    if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+                    else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true, data:{uuid, title, paper_id:paperId}})); }
+                });
+            } catch(e) { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:e.message})); }
+        });
+        return;
+    }
+    
+    // 删除会话
+    if (url.pathname.startsWith('/api/chat/sessions/') && req.method === 'DELETE') {
+        const uuid = url.pathname.replace('/api/chat/sessions/', '');
+        // 先删除消息
+        db.run('DELETE FROM chat_messages WHERE session_uuid = ?', [uuid], (err) => {
+            if (err) console.error('删除消息失败:', err);
+        });
+        // 再删除会话
+        db.run('DELETE FROM chat_sessions WHERE uuid = ?', [uuid], (err) => {
+            if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+            else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true})); }
+        });
+        return;
+    }
+    
+    // 获取会话历史消息
+    if (url.pathname.match(/^\/api\/chat\/sessions\/[^/]+\/messages$/) && req.method === 'GET') {
+        const uuid = url.pathname.replace('/api/chat/sessions/', '').replace('/messages', '');
+        db.all('SELECT * FROM chat_messages WHERE session_uuid = ? ORDER BY created_at ASC', [uuid], (err, rows) => {
+            if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+            else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true, data:rows})); }
+        });
+        return;
+    }
+    
+    // 发送消息到会话
+    if (url.pathname.match(/^\/api\/chat\/sessions\/[^/]+\/messages$/) && req.method === 'POST') {
+        const sessionUuid = url.pathname.replace('/api/chat/sessions/', '').replace('/messages', '');
+        let body = '';
+        req.on('data', c => body += c);
+        req.on('end', () => {
+            try {
+                const data = JSON.parse(body);
+                const role = data.role || 'user';
+                const content = data.content;
+                
+                if (!content) { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:'no content'})); return; }
+                
+                // 获取前端传来的论文上下文
+                const paperContext = data.context || '';
+                
+                // 保存用户消息
+                db.run('INSERT INTO chat_messages (session_uuid, role, content) VALUES (?, ?, ?)', [sessionUuid, role, content], (err) => {
+                    if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); return; }
+                    
+                    // 更新会话时间
+                    db.run('UPDATE chat_sessions SET updated_at = datetime("now") WHERE uuid = ?', [sessionUuid], (err) => {});
+                    
+                    // 获取对话历史（最近10条消息）
+                    db.all('SELECT role, content FROM chat_messages WHERE session_uuid = ? ORDER BY created_at DESC LIMIT 10', [sessionUuid], (err, rows) => {
+                        if (err || !rows) {
+                            res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:'获取历史失败'}));
+                            return;
+                        }
+                        
+                        // 构建对话历史上下文
+                        let chatHistory = rows.reverse().map(m => (m.role === 'user' ? '用户: ' : '助手: ') + m.content).join('\n');
+                        
+                        // 构建完整的 prompt：优先使用论文上下文，然后是对话历史
+                        let prompt;
+                        if (paperContext) {
+                            prompt = `论文上下文:\n${paperContext}\n\n对话历史:\n${chatHistory}\n\n用户最新问题: ${content}\n\n请根据论文内容和对话历史回答用户的问题。`;
+                        } else {
+                            prompt = `对话历史:\n${chatHistory}\n\n用户问题: ${content}\n\n请根据对话历史回答用户的问题。`;
+                        }
+                        
+                        callMiniMax(prompt, '你是一个专业的学术论文助手，擅长回答关于论文内容的问题。用中文回答。', (result) => {
+                            if (result.success && result.text) {
+                                // 保存助手回复
+                                db.run('INSERT INTO chat_messages (session_uuid, role, content) VALUES (?, ?, ?)', [sessionUuid, 'assistant', result.text], (err) => {});
+                                res.writeHead(200, {'Content-Type':'application/json'});
+                                res.end(JSON.stringify({success:true, text:result.text}));
+                            } else {
+                                res.writeHead(200, {'Content-Type':'application/json'});
+                                res.end(JSON.stringify({success:false, error:result.error || 'AI回答失败'}));
+                            }
+                        });
+                    });
+                });
+            } catch(e) { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:e.message})); }
+        });
+        return;
+    }
+    
     // Serve images - 从数据库读取
     if (url.pathname.startsWith('/api/images/')) {
         const imgName = url.pathname.replace('/api/images/', '');
