@@ -123,7 +123,7 @@ def parse_url(pdf_url: str, token: Optional[str] = None, output_dir: Optional[st
                             images_dir = None
                             if output_dir:
                                 os.makedirs(output_dir, exist_ok=True)
-                                images_dir = os.path.join(output_dir, 'images')
+                                images_dir = os.path.join(output_dir, f'images_{output_id}')
                                 if os.path.exists(images_dir):
                                     import shutil
                                     shutil.rmtree(images_dir)
@@ -138,8 +138,8 @@ def parse_url(pdf_url: str, token: Optional[str] = None, output_dir: Optional[st
                                         with open(img_path, 'wb') as f:
                                             f.write(img_data)
                                 
-                                # 保存 markdown
-                                output_file = os.path.join(output_dir, "paper.md")
+                                # 保存 markdown - 使用 output_id 唯一定位
+                                output_file = os.path.join(output_dir, f"paper_{output_id}.md")
                                 with open(output_file, 'w', encoding='utf-8') as f:
                                     f.write(markdown_content)
                             
@@ -434,6 +434,7 @@ if __name__ == "__main__":
     parser.add_argument("--url", type=str, help="PDF URL")
     parser.add_argument("--file", type=str, help="本地 PDF 文件路径")
     parser.add_argument("--output", type=str, default="/tmp", help="输出目录")
+    parser.add_argument("--uuid", type=str, help="论文唯一标识")
     
     args = parser.parse_args()
     
@@ -443,6 +444,10 @@ if __name__ == "__main__":
         else:
             print("Token 保存失败")
             sys.exit(1)
+    
+    # 使用 uuid 生成唯一的输出文件名和图片目录
+    output_id = args.uuid if args.uuid else (args.arxiv or "paper")
+    args.output = args.output or "/tmp"
     
     # 执行解析
     result = None
@@ -467,7 +472,7 @@ if __name__ == "__main__":
         if result["success"]:
             print(f"解析成功! Markdown 长度: {len(result['data']['markdown'])}")
             if args.output:
-                print(f"已保存到: {args.output}/paper.md")
+                print(f"已保存到: {args.output}/paper_{output_id}.md")
         else:
             print(f"解析失败: {result.get('error')}")
     else:

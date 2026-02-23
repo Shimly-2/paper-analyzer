@@ -271,7 +271,7 @@ function importPaper() {
     reader.onload = function(e) {
         try {
             var data = JSON.parse(e.target.result);
-            var papersList = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
+            var papersList = papers.slice();
             var newId = papersList.length > 0 ? Math.max.apply(null, papersList.map(function(p){return p.id;})) + 1 : 1;
             papersList.unshift({
                 id: newId,
@@ -286,7 +286,7 @@ function importPaper() {
                 peerReview: data.peerReview || '',
                 parsed: !!data.original
             });
-            localStorage.setItem('paperLibrary', JSON.stringify(papersList));
+            // localStorage.setItem('paperLibrary', JSON.stringify(papersList));
             papers = papersList;
             currentPaper = papers[0];
             renderPaperList();
@@ -435,14 +435,9 @@ function initPapers() {
         })
         .catch(function(e) { 
             console.error('从后端加载失败:', e); 
-            console.log('使用 localStorage 后备');
-            // 后端失败时尝试 localStorage 后备
-            try {
-                papers = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
-            } catch(e2) {
-                papers = [];
-            }
-            currentPaper = papers.length > 0 ? papers[0] : null;
+            // 禁用 localStorage 后备，直接使用空数组
+            papers = [];
+            currentPaper = null;
             renderPaperList();
             updateContent();
         });
@@ -528,9 +523,11 @@ function updateContent() {
         var apiUrl = null || 'http://192.168.3.24:5001';
         var content = currentPaper.original.replace(/\/api\/images\//g, apiUrl + '/api/images/');
         document.getElementById("originalContent").innerHTML = content;
+        renderKaTeX();
         if (currentPaper.translated) {
             var translated = currentPaper.translated.replace(/\/api\/images\//g, apiUrl + '/api/images/');
             document.getElementById("translatedContent").innerHTML = translated;
+        renderKaTeX();
         } else {
             document.getElementById("translatedContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"翻译"获取中文翻译</p>';
         }
@@ -549,6 +546,21 @@ function updateContent() {
     // Display saved peer review
     if (currentPaper.peerReview) {
         document.getElementById('peerReviewContent').innerHTML = '<div class="analysis-section">' + currentPaper.peerReview + '</div>';
+    }
+    
+    // 渲染 KaTeX 公式
+    renderKaTeX();
+}
+
+function renderKaTeX() {
+    if (typeof renderMathInElement !== 'undefined') {
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false}
+            ],
+            throwOnError: false
+        });
     }
 }
 
@@ -578,7 +590,7 @@ function parsePaper() {
                 fetch(apiUrl + '/api/convert', {
                     method: 'POST',
                     headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({markdown: markdown, title: currentPaper.title})
+                    body: JSON.stringify({markdown: markdown, title: currentPaper.title, uuid: currentPaper.uuid})
                 })
                 .then(function(r2){return r2.json();})
                 .then(function(d2){
@@ -589,6 +601,7 @@ function parsePaper() {
                         var apiUrl = null || 'http://192.168.3.24:5001';
                         var content = d2.text.replace(/\/api\/images\//g, apiUrl + '/api/images/');
                         document.getElementById('originalContent').innerHTML = content;
+                        renderKaTeX();
                         document.getElementById('analysisTitle').innerHTML = currentPaper.title;
                     } else {
                         alert('格式转换失败: ' + (d2.error || '未知错误'));
@@ -610,7 +623,8 @@ function parsePaper() {
     var fallbackUrls = ['http://192.168.3.24:5001', 'http://127.0.0.1:5001'];
     var payload = {
         sourceType: 'arxiv',
-        source: currentPaper.arxiv
+        source: currentPaper.arxiv,
+        uuid: currentPaper.uuid
     };
     
     fetch(apiUrl + '/api/parse', {
@@ -630,7 +644,7 @@ function parsePaper() {
             fetch(apiUrl + '/api/convert', {
                 method: 'POST',
                 headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({markdown: markdown, title: currentPaper.title})
+                body: JSON.stringify({markdown: markdown, title: currentPaper.title, uuid: currentPaper.uuid})
             })
             .then(function(r){return r.json();})
             .then(function(d){
@@ -641,6 +655,7 @@ function parsePaper() {
                     var apiUrl = null || 'http://192.168.3.24:5001';
                     var content = d.text.replace(/\/api\/images\//g, apiUrl + '/api/images/');
                     document.getElementById('originalContent').innerHTML = content;
+                    renderKaTeX();
                     document.getElementById('analysisTitle').innerHTML = currentPaper.title;
                 } else {
                     alert('格式转换失败: ' + (d.error || '未知错误'));
@@ -703,6 +718,7 @@ function translatePaper() {
             var apiUrl = null || 'http://192.168.3.24:5001';
             var translated = d.text.replace(/\/api\/images\//g, apiUrl + '/api/images/');
             document.getElementById('translatedContent').innerHTML = translated;
+            renderKaTeX();
         } else {
             alert('翻译失败: ' + (d.error || '未知错误'));
             document.getElementById('translatedContent').innerHTML = '<p style="color:var(--text-muted)">翻译失败</p>';
@@ -848,6 +864,32 @@ function renderCustomTags(){
     document.getElementById('customTags').innerHTML = customTags.map(function(t,i){return '<span class="custom-tag">' + t + '<span onclick="removeCustomTag(' + i + ')">x</span></span>';}).join('');
 }
 
+// 生成论文的唯一标识 uuid
+function generateUuid(type, value) {
+    if (type === 'arxiv') {
+        return 'arxiv_' + value;
+    } else if (type === 'pdf-url') {
+        // 用 URL 的 hash 作为 uuid
+        var hash = 0;
+        for (var i = 0; i < value.length; i++) {
+            var char = value.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return 'pdf_' + Math.abs(hash).toString(16);
+    } else if (type === 'upload') {
+        // 用文件名的 hash 作为 uuid
+        var hash = 0;
+        for (var i = 0; i < value.length; i++) {
+            var char = value.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return 'upload_' + Math.abs(hash).toString(16);
+    }
+    return 'unknown_' + Date.now();
+}
+
 function addPaper(){
     var type = document.getElementById('inputType').value;
     
@@ -857,10 +899,10 @@ function addPaper(){
     
     if(type === 'arxiv'){
         var id = document.getElementById('paperInput').value.trim();
-        if(id) newPapers.push({id:newId,title:"论文 " + id,arxiv:id,date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});
+        if(id) newPapers.push({id:newId,title:"论文 " + id,arxiv:id,uuid:generateUuid('arxiv', id),date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});
     } else if(type === 'arxiv-batch'){
         var ids = document.getElementById('batchInput').value.split('\n').filter(function(x){return x.trim();});
-        ids.forEach(function(id,i){newPapers.push({id:newId+i,title:"论文 " + id.trim(),arxiv:id.trim(),date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});});
+        ids.forEach(function(id,i){newPapers.push({id:newId+i,title:"论文 " + id.trim(),arxiv:id.trim(),uuid:generateUuid('arxiv', id.trim()),date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});});
     } else if(type === 'pdf' && pdfFiles && pdfFiles.length > 0){
         // Upload PDFs first
         var apiUrl = null || 'http://192.168.3.24:5001';
@@ -876,7 +918,7 @@ function addPaper(){
         Promise.all(uploadPromises).then(function(results){
             results.sort(function(a,b){return a.index - b.index;});
             results.forEach(function(r,i){
-                newPapers.push({id:newId+i,title:r.filename.replace('.pdf',''),arxiv:"PDF",pdfUrl:r.path,date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});
+                newPapers.push({id:newId+i,title:r.filename.replace('.pdf',''),arxiv:"PDF",uuid:generateUuid('upload', r.filename),pdfUrl:r.path,date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});
             });
             papers.unshift.apply(papers, newPapers);
             currentPaper = papers[0];
@@ -888,13 +930,13 @@ function addPaper(){
         });
         return;
     } else if(type === 'folder'){
-        selectedFiles.forEach(function(f,i){newPapers.push({id:newId+i,title:f.replace('.pdf',''),arxiv:"PDF",date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});});
+        selectedFiles.forEach(function(f,i){newPapers.push({id:newId+i,title:f.replace('.pdf',''),arxiv:"PDF",uuid:generateUuid('upload', f),date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});});
     } else if(type === 'pdf-url'){
         var pdfUrl = document.getElementById('pdfUrlInput').value.trim();
         if(pdfUrl) {
             // Extract filename from URL
             var filename = pdfUrl.split('/').pop() || 'paper.pdf';
-            newPapers.push({id:newId,title:filename.replace('.pdf',''),arxiv:"PDF",pdfUrl:pdfUrl,date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});
+            newPapers.push({id:newId,title:filename.replace('.pdf',''),arxiv:"PDF",uuid:generateUuid('pdf-url', pdfUrl),pdfUrl:pdfUrl,date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});
         }
     }
     
@@ -959,7 +1001,7 @@ updateContent();
 function showApiSettings(){
     var url = prompt("请输入 API 服务器地址:", localStorage.getItem("apiUrl") || 'http://192.168.3.24:5001');
     if(url){
-        localStorage.setItem("apiUrl", url);
+        // localStorage.setItem("apiUrl", url);
         alert("API 已更新为: " + url);
     }
 }
@@ -1000,8 +1042,9 @@ function generatePeerReview() {
     
     var apiUrl = null || 'http://192.168.3.24:5001';
     
-    // First get peer review
-    fetch(apiUrl + '/api/peerReview', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:currentPaper.title, abstract:currentPaper.abstract, content:document.getElementById('originalContent').innerHTML})})
+    // First get peer review - 截断内容以避免上下文溢出
+    var content = currentPaper.original ? currentPaper.original.substring(0, 196608) : '';
+    fetch(apiUrl + '/api/peerReview', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:currentPaper.title, abstract:currentPaper.abstract, content: content})})
     .then(function(r){return r.json();})
     .then(function(d){
         if(d.success && d.text){
@@ -1010,7 +1053,7 @@ function generatePeerReview() {
             fetch(apiUrl + '/api/convert', {
                 method:'POST',
                 headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({markdown: d.text, title: '同行评审'})
+                body:JSON.stringify({markdown: d.text, title: '同行评审', uuid: currentPaper.uuid})
             })
             .then(function(r2){return r2.json();})
             .then(function(d2){
@@ -1018,6 +1061,7 @@ function generatePeerReview() {
                     currentPaper.peerReview = d2.text;
                     savePapers();
                     document.getElementById('peerReviewContent').innerHTML = '<div class="analysis-section">'+d2.text+'</div>';
+                    renderKaTeX();
                 } else {
                     currentPaper.peerReview = d.text;
                     savePapers();
@@ -1077,7 +1121,7 @@ function doSemanticSearch() {
 }
 
 function importSearchPaper(paperId, title, hasArxiv) {
-    var papersList = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
+    var papersList = papers.slice();
     var paperTitle = title ? decodeURIComponent(title) : '论文 ' + paperId;
     var apiUrl = (null || 'http://192.168.3.24:5001');
     
@@ -1118,8 +1162,10 @@ function doImport(papersList, arxivId, paperTitle) {
     }
     
     var newId = papersList.length > 0 ? Math.max.apply(null, papersList.map(function(p){return p.id;})) + 1 : 1;
+    var uuid = generateUuid('arxiv', arxivId);
     papersList.unshift({
         id: newId,
+        uuid: uuid,
         title: paperTitle,
         arxiv: arxivId,
         date: new Date().toISOString().split('T')[0],
@@ -1131,11 +1177,12 @@ function doImport(papersList, arxivId, paperTitle) {
         peerReview: '',
         parsed: false
     });
-    localStorage.setItem('paperLibrary', JSON.stringify(papersList));
+    // localStorage.setItem('paperLibrary', JSON.stringify(papersList));
     papers = papersList;
     alert('论文已添加到论文库: ' + paperTitle + ' (arXiv: ' + arxivId + ')');
     document.querySelectorAll('.nav-tab')[0].click();
     renderPaperList();
+    savePapers();
 }
 
 
@@ -1150,8 +1197,9 @@ function generateAnalysis() {
     // Fallback URLs
     var fallbackUrls = ['http://192.168.3.24:5001', 'http://127.0.0.1:5001'];
     
-    // First get analysis
-    fetch(apiUrl + '/api/analyze', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:currentPaper.title, abstract:currentPaper.abstract, content:currentPaper.original})})
+    // First get analysis - 截断内容以避免上下文溢出
+    var content = currentPaper.original ? currentPaper.original.substring(0, 196608) : '';
+    fetch(apiUrl + '/api/analyze', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:currentPaper.title, abstract:currentPaper.abstract, content: content})})
     .then(function(r){return r.json();})
     .then(function(d){
         if(d.success && d.text){
@@ -1160,12 +1208,13 @@ function generateAnalysis() {
             fetch(apiUrl + '/api/convert', {
                 method:'POST',
                 headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({markdown: d.text, title: '分析报告'})
+                body:JSON.stringify({markdown: d.text, title: '分析报告', uuid: currentPaper.uuid})
             })
             .then(function(r2){return r2.json();})
             .then(function(d2){
                 if(d2.success && d2.text){
                     document.getElementById('analysisContent').innerHTML = '<div class="analysis-section">'+d2.text+'</div>';
+                    renderKaTeX();
                     currentPaper.analysis = d2.text;
                     savePapers();
                 } else {
@@ -1224,7 +1273,7 @@ function importPaper() {
     reader.onload = function(e) {
         try {
             var data = JSON.parse(e.target.result);
-            var papersList = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
+            var papersList = papers.slice();
             var newId = papersList.length > 0 ? Math.max.apply(null, papersList.map(function(p){return p.id;})) + 1 : 1;
             papersList.unshift({
                 id: newId,
@@ -1239,7 +1288,7 @@ function importPaper() {
                 peerReview: data.peerReview || '',
                 parsed: !!data.original
             });
-            localStorage.setItem('paperLibrary', JSON.stringify(papersList));
+            // localStorage.setItem('paperLibrary', JSON.stringify(papersList));
             papers = papersList;
             currentPaper = papers[0];
             renderPaperList();
@@ -1304,7 +1353,7 @@ function importPaper() {
     reader.onload = function(e) {
         try {
             var data = JSON.parse(e.target.result);
-            var papersList = JSON.parse(localStorage.getItem('paperLibrary') || '[]');
+            var papersList = papers.slice();
             var newId = papersList.length > 0 ? Math.max.apply(null, papersList.map(function(p){return p.id;})) + 1 : 1;
             papersList.unshift({
                 id: newId,
@@ -1319,7 +1368,7 @@ function importPaper() {
                 peerReview: data.peerReview || '',
                 parsed: !!data.original
             });
-            localStorage.setItem('paperLibrary', JSON.stringify(papersList));
+            // localStorage.setItem('paperLibrary', JSON.stringify(papersList));
             papers = papersList;
             currentPaper = papers[0];
             renderPaperList();

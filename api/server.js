@@ -9,54 +9,39 @@ const TOKEN_FILE = path.join(__dirname, '..', 'config', 'mineru_token.txt');
 const MINIMAX_TOKEN_FILE = path.join(__dirname, '..', 'config', 'minimax_token.txt');
 const PYTHON_SCRIPT = path.join(__dirname, '..', 'scripts', 'mineru_client.py');
 
-// 把图片转成 base64 并嵌入 markdown
-function convertImagesToBase64(markdown) {
-    if (!markdown) return markdown;
+// 从数据库读取图片并返回 URL 格式
+function convertImagesToUrl(markdown, uuid) {
+    if (!markdown || !uuid) return markdown;
     
-    const imageRegex = /!\[([^\]]*)\]\(\/api\/images\/([^)]+)\)/g;
+    // 匹配 markdown 中的图片：![](images/xxx.jpg) 或 ![](api/images/xxx.jpg)
+    const imageRegex = /!\[([^\]]*)\]\((?:images\/|api\/images\/)([^)]+)\)/g;
     return markdown.replace(imageRegex, (match, alt, imgName) => {
-        const imgPath = path.join('/tmp', 'images', imgName);
-        try {
-            if (fs.existsSync(imgPath)) {
-                const data = fs.readFileSync(imgPath);
-                const base64 = data.toString('base64');
-                const ext = path.extname(imgName).toLowerCase();
-                const mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
-                return `<img src="data:${mimeType};base64,${base64}" alt="${alt}" style="max-width:100%">`;
-            }
-        } catch (e) {
-            console.error('转换图片失败:', imgName, e.message);
-        }
-        return match;
+        // 返回 URL 格式：/api/images/uuid_filename.jpg
+        return `<img src="/api/images/${uuid}_${imgName}" alt="${alt}" style="max-width:100%">`;
     });
 }
 
-// 转换 HTML 中的图片为 base64（处理 MiniMax 返回的 HTML）
-function convertHtmlImagesToBase64(html) {
-    if (!html) return html;
+// 转换 HTML 中的图片路径，添加 uuid 前缀
+function convertHtmlImagesToUrl(html, uuid) {
+    if (!html || !uuid) return html;
     
-    // 匹配各种可能的图片 URL 格式
+    // 匹配 <img src="/api/images/xxx.jpg"> 格式
     const imageRegex = /<img[^>]*src=["']([^"']+)["'][^>]*>/gi;
     return html.replace(imageRegex, (match, src) => {
-        // 如果已经是 base64，直接返回
-        if (src.startsWith('data:')) return match;
+        // 如果已经有 uuid 前缀，直接返回
+        if (src.includes('/' + uuid + '_')) return match;
         
-        // 提取图片文件名
+        // 提取文件名，添加 uuid 前缀
         const imgName = src.split('/').pop();
-        const imgPath = path.join('/tmp', 'images', imgName);
-        try {
-            if (fs.existsSync(imgPath)) {
-                const data = fs.readFileSync(imgPath);
-                const base64 = data.toString('base64');
-                const ext = path.extname(imgName).toLowerCase();
-                const mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
-                return `<img src="data:${mimeType};base64,${base64}" style="max-width:100%">`;
-            }
-        } catch (e) {
-            console.error('转换HTML图片失败:', imgName, e.message);
-        }
-        return match;
+        const newSrc = '/api/images/' + uuid + '_' + imgName;
+        return match.replace(src, newSrc);
     });
+}
+
+// 禁用 HTML 图片 base64 转换，保持 URL 不变
+function convertHtmlImagesToBase64(html) {
+    // 直接返回，不做任何转换
+    return html;
 }
 
 function getToken(file) {
@@ -69,19 +54,41 @@ function getToken(file) {
     return null;
 }
 
-function parseWithPython(arxivId, callback) {
+function parseWithPython(arxivId, uuid, callback) {
     // Python 路径：本地用 python3，Railway Docker 里用 /app/venv/bin/python
     const pythonCmd = process.env.PYTHON_PATH || 'python3';
-    const proc = spawn(pythonCmd, ['-u', PYTHON_SCRIPT, '--arxiv', arxivId, '--output', '/tmp'], { cwd: path.dirname(PYTHON_SCRIPT) });
+    const outputFile = `/tmp/paper_${uuid}.md`;  // 每个论文用 uuid 唯一定位
+    const imagesDir = `/tmp/images_${uuid}`;    // 每个论文的图片放在独立目录
+    const proc = spawn(pythonCmd, ['-u', PYTHON_SCRIPT, '--arxiv', arxivId, '--output', '/tmp', '--uuid', uuid], { cwd: path.dirname(PYTHON_SCRIPT) });
     let output = '', error = '';
     proc.stdout.on('data', d => output += d);
     proc.stderr.on('data', d => error += d);
     proc.on('close', () => {
-        if (fs.existsSync('/tmp/paper.md')) {
-            callback(null, fs.readFileSync('/tmp/paper.md', 'utf8'));
+        if (fs.existsSync(outputFile)) {
+            // 解析完成后，将图片存入数据库
+            saveImagesToDb(uuid, imagesDir);
+            callback(null, fs.readFileSync(outputFile, 'utf8'));
         } else {
             callback(error || '解析失败', null);
         }
+    });
+}
+
+// 将图片存入数据库
+function saveImagesToDb(uuid, imagesDir) {
+    if (!fs.existsSync(imagesDir)) return;
+    
+    const files = fs.readdirSync(imagesDir);
+    files.forEach(file => {
+        const filePath = path.join(imagesDir, file);
+        const data = fs.readFileSync(filePath);
+        const ext = path.extname(file).toLowerCase();
+        const mime = ext === '.png' ? 'image/png' : 'image/jpeg';
+        
+        db.run(`INSERT OR REPLACE INTO paper_images (paper_uuid, filename, data, mime) VALUES (?, ?, ?, ?)`, 
+            [uuid, file, data, mime], (err) => {
+                if (err) console.error('保存图片失败:', err);
+            });
     });
 }
 
@@ -160,14 +167,16 @@ const server = http.createServer((req, res) => {
             try {
                 const data = JSON.parse(body);
                 const source = data.source || data.arxivId;
+                const uuid = data.uuid;  // 论文的唯一标识
                 if (!source) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:'no source'})); return; }
+                if (!uuid) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:'no uuid'})); return; }
                 
                 let arxivId = source;
                 if (source.includes('arxiv.org/pdf')) arxivId = source.replace('https://arxiv.org/pdf/','').replace('.pdf','');
                 
                 // First try to get title from arXiv API
                 getArxivInfo(arxivId, (info) => {
-                    parseWithPython(arxivId, (err, markdown) => {
+                    parseWithPython(arxivId, uuid, (err, markdown) => {
                         if (err) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err})); }
                         else { 
                             // Use first # heading as title if API didn't return one
@@ -177,9 +186,9 @@ const server = http.createServer((req, res) => {
                                 if (match) title = match[1].trim();
                             }
                             res.writeHead(200, {'Content-Type':'application/json'}); 
-                            // 转换图片为 base64
-                            const markdownWithImages = convertImagesToBase64(markdown);
-                            res.end(JSON.stringify({success:true, data:{id:arxivId, title:title, abstract:info.abstract, markdown:markdownWithImages}})); 
+                            // 转换图片为 URL 格式（不转 base64）
+                            const markdownWithImages = convertImagesToUrl(markdown, uuid);
+                            res.end(JSON.stringify({success:true, data:{id:arxivId, uuid:uuid, title:title, abstract:info.abstract, markdown:markdownWithImages}})); 
                         }
                     });
                 });
@@ -396,8 +405,12 @@ const server = http.createServer((req, res) => {
         req.on('data', c => body += c);
         req.on('end', () => {
             try {
-                const { markdown, title } = JSON.parse(body);
+                const { markdown, title, uuid } = JSON.parse(body);
                 if (!markdown) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:'no markdown'})); return; }
+                
+                // 截断 markdown 以避免上下文溢出
+                const maxLength = 196608;
+                const truncatedMarkdown = markdown.length > maxLength ? markdown.substring(0, maxLength) : markdown;
                 
                 const prompt = `请将以下学术论文的Markdown内容转换为完整HTML格式。
 
@@ -439,12 +452,12 @@ const server = http.createServer((req, res) => {
 <ul style="margin:12px 0;padding-left:24px"><li>列表项</li></ul>
 
 论文标题: ${title || ''}
-内容：${markdown}`;
+内容：${truncatedMarkdown}`;
 
                 callMiniMax(prompt, '你是一个严格的HTML转换器。只输出纯HTML块级元素，使用KaTeX公式语法（$$块级$，行内$）。所有内容从上到下纵向排列。图片URL用/api/images/图片名.jpg。禁止flex/grid/float布局。', (result) => {
-                    // 转换 HTML 中的图片为 base64
-                    if (result.success && result.text) {
-                        result.text = convertHtmlImagesToBase64(result.text);
+                    // 转换 HTML 中的图片路径，添加 uuid 前缀
+                    if (result.success && result.text && uuid) {
+                        result.text = convertHtmlImagesToUrl(result.text, uuid);
                     }
                     res.writeHead(200, {'Content-Type':'application/json'});
                     res.end(JSON.stringify(result.success ? {success:true, text:result.text} : {success:false, error:result.error}));
@@ -531,15 +544,15 @@ const server = http.createServer((req, res) => {
             try {
                 const paper = JSON.parse(body);
                 const stmt = db.prepare(`
-                    INSERT INTO papers (title, arxiv, pdfUrl, date, parsed, original, translated, analysis, peerReview, abstract, tags, updatedAt)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                    INSERT INTO papers (id, uuid, title, arxiv, pdfUrl, date, parsed, original, translated, analysis, peerReview, abstract, tags, updatedAt)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
                     ON CONFLICT(id) DO UPDATE SET
-                        title=excluded.title, arxiv=excluded.arxiv, pdfUrl=excluded.pdfUrl, date=excluded.date,
+                        uuid=excluded.uuid, title=excluded.title, arxiv=excluded.arxiv, pdfUrl=excluded.pdfUrl, date=excluded.date,
                         parsed=excluded.parsed, original=excluded.original, translated=excluded.translated,
                         analysis=excluded.analysis, peerReview=excluded.peerReview, abstract=excluded.abstract,
                         tags=excluded.tags, updatedAt=datetime('now')
                 `);
-                stmt.run(paper.title, paper.arxiv, paper.pdfUrl, paper.date, paper.parsed?1:0, paper.original, paper.translated, paper.analysis, paper.peerReview, paper.abstract, JSON.stringify(paper.tags||[]), (err) => {
+                stmt.run(paper.id, paper.uuid, paper.title, paper.arxiv, paper.pdfUrl, paper.date, paper.parsed?1:0, paper.original, paper.translated, paper.analysis, paper.peerReview, paper.abstract, JSON.stringify(paper.tags||[]), (err) => {
                     if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
                     else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true})); }
                 });
@@ -550,25 +563,45 @@ const server = http.createServer((req, res) => {
     
     // Delete paper from SQLite
     if (url.pathname.startsWith('/api/papers/') && req.method === 'DELETE') {
-        const id = url.pathname.split('/').pop();
-        db.run('DELETE FROM papers WHERE id = ?', [id], (err) => {
-            if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
-            else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true})); }
+        const id = parseInt(url.pathname.split('/').pop());
+        // 先获取论文的 uuid，以便删除图片
+        db.get('SELECT uuid FROM papers WHERE id = ?', [id], (err, row) => {
+            if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); return; }
+            
+            const uuid = row ? row.uuid : null;
+            
+            // 先删除图片
+            if (uuid) {
+                db.run('DELETE FROM paper_images WHERE paper_uuid = ?', [uuid], (err) => {
+                    if (err) console.error('删除图片失败:', err);
+                });
+            }
+            
+            // 再删除论文
+            db.run('DELETE FROM papers WHERE id = ?', [id], (err) => {
+                if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+                else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true})); }
+            });
         });
         return;
     }
     
-    // Serve images
+    // Serve images - 从数据库读取
     if (url.pathname.startsWith('/api/images/')) {
         const imgName = url.pathname.replace('/api/images/', '');
-        const imgPath = path.join('/tmp', 'images', imgName);
-        fs.readFile(imgPath, (err, data) => {
-            if (err) { res.writeHead(404); res.end('Not found'); }
-            else {
-                const ext = path.extname(imgName).toLowerCase();
-                const ct = ext === '.png' ? 'image/png' : 'image/jpeg';
-                res.writeHead(200, {'Content-Type': ct});
-                res.end(data);
+        // 格式：uuid_filename.jpg，从右边找第一个 _ 分割
+        // 例如：arxiv_2602.03219_xxx.jpg → uuid: arxiv_2602.03219, filename: xxx.jpg
+        const lastUnderscoreIndex = imgName.lastIndexOf('_');
+        const uuid = imgName.substring(0, lastUnderscoreIndex);
+        const filename = imgName.substring(lastUnderscoreIndex + 1);
+        
+        db.get('SELECT data, mime FROM paper_images WHERE paper_uuid = ? AND filename = ?', [uuid, filename], (err, row) => {
+            if (err || !row) { 
+                res.writeHead(404); 
+                res.end('Not found'); 
+            } else {
+                res.writeHead(200, {'Content-Type': row.mime || 'image/jpeg'});
+                res.end(row.data);
             }
         });
         return;
