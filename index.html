@@ -319,7 +319,7 @@ function importPaper() {
 <button class="nav-btn" onclick="showImportModal()">导入</button></div>
 </nav>
 <div class="overlay" id="mobileOverlay" onclick="toggleMobileSidebar()"></div><div class="container">
-<aside class="sidebar-left" id="sidebarLeft">
+<aside class="sidebar-left collapsed" id="sidebarLeft">
 <div class="sidebar-header"><input type="text" class="search-input" placeholder="搜索论文..." id="paperSearch" oninput="renderPaperList()">
 <div class="filter-tags" id="filterTags"></div>
 </div>
@@ -393,7 +393,7 @@ function importPaper() {
 
 </main>
 <button class="toggle-btn toggle-right" id="toggleRight" onclick="toggleSidebar('right')">&#8250;</button>
-<aside class="sidebar-right" id="sidebarRight">
+<aside class="sidebar-right collapsed" id="sidebarRight">
 <div class="chat-header" style="flex-direction:column;align-items:stretch;border-bottom:none">
     <div style="display:flex;align-items:center;padding:4px 0 4px 0">
         <span style="font-size:13px;font-weight:600">Agent 对话</span>
@@ -408,7 +408,7 @@ function importPaper() {
 <div class="chat-input-area"><div class="chat-input-wrapper"><input type="text" class="chat-input" id="chatInput" placeholder="输入问题..." onkeypress="if(event.key==='Enter')sendMessage()"><button class="send-btn" onclick="sendMessage()">发送</button></div></div>
 </aside>
 </div>
-<nav class="mobile-nav"><div class="mobile-nav-items"><div class="mobile-item active" onclick="mobileNav(1)"><span class="mobile-icon">☰</span><span>论文库</span></div><div class="mobile-item" onclick="mobileNav(2)"><span class="mobile-icon">📖</span><span>阅读</span></div><div class="mobile-item" onclick="mobileNav(3)"><span class="mobile-icon">📊</span><span>分析</span></div><div class="mobile-item" onclick="mobileNav(4)"><span class="mobile-icon">💬</span><span>问答</span></div></div></nav>
+<nav class="mobile-nav"><div class="mobile-nav-items"><div class="mobile-item active" onclick="mobileNav(1)"><span class="mobile-icon">📖</span><span>阅读</span></div><div class="mobile-item" onclick="mobileNav(2)"><span class="mobile-icon">📊</span><span>分析</span></div><div class="mobile-item" onclick="mobileNav(3)"><span class="mobile-icon">📝</span><span>评审</span></div><div class="mobile-item" onclick="mobileNav(4)"><span class="mobile-icon">🔍</span><span>检索</span></div><div class="mobile-item" onclick="mobileNav(5)"><span class="mobile-icon">🔥</span><span>热点</span></div></div></nav>
 <div class="modal-overlay" id="addPaperModal">
 <div class="modal"><div class="modal-header"><span class="modal-title">添加论文</span><span class="modal-close" onclick="hideAddPaperModal()">x</span></div>
 <div class="modal-body">
@@ -942,6 +942,10 @@ function toggleSidebar(side) {
         left.classList.toggle('collapsed');
         tl.classList.toggle('collapsed');
         tl.innerHTML = left.classList.contains('collapsed') ? '&#8250;' : '&#8249;';
+        // 窄屏模式下用transform控制显隐
+        if(window.innerWidth <= 1024) {
+            left.style.transform = left.classList.contains('collapsed') ? 'translateX(-100%)' : 'translateX(0)';
+        }
     } else {
         right.classList.toggle('collapsed');
         tr.classList.toggle('collapsed');
@@ -1229,22 +1233,20 @@ function mobileNav(tab){
     document.querySelectorAll('.mobile-item').forEach(function(el){el.classList.remove('active');});
     event.target.closest('.mobile-item').classList.add('active');
     if(tab === 1){
-        var sidebar = document.getElementById('sidebarLeft');
-        var overlay = document.getElementById('mobileOverlay');
-        sidebar.classList.add('show');
-        overlay.classList.add('show');
-    } else if(tab === 2){
+        // 阅读
         switchMode('reading');
-        document.querySelectorAll('.mode-tab')[0].classList.add('active');
-        document.querySelectorAll('.mode-tab')[1].classList.remove('active');
-    } else if(tab === 3){
+    } else if(tab === 2){
+        // 分析
         switchMode('analysis');
-        document.querySelectorAll('.mode-tab')[1].classList.add('active');
-        document.querySelectorAll('.mode-tab')[0].classList.remove('active');
+    } else if(tab === 3){
+        // 评审
+        switchMode('peerReview');
     } else if(tab === 4){
-        // 打开右侧问答边栏
-        var sidebar = document.getElementById('sidebarRight');
-        sidebar.classList.remove('collapsed');
+        // 检索
+        switchMode('semanticSearch');
+    } else if(tab === 5){
+        // 热点
+        switchMode('hotPapers');
     }
 }
 
@@ -1772,11 +1774,23 @@ function importPaper() {
 <script>
 window.addEventListener('resize', function() {
     var right = document.getElementById('sidebarRight');
+    var left = document.getElementById('sidebarLeft');
     if (window.innerWidth > 1024) {
         // 宽屏模式下重置transform
         right.style.transform = '';
+        left.style.transform = '';
     }
 });
+
+// 初始化移动端侧栏隐藏
+(function() {
+    if (window.innerWidth <= 1024) {
+        var left = document.getElementById('sidebarLeft');
+        var right = document.getElementById('sidebarRight');
+        left.style.transform = 'translateX(-100%)';
+        right.style.transform = 'translateX(100%)';
+    }
+})();
 </script>
 </body>
 </html>
