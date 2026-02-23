@@ -102,6 +102,44 @@ db.serialize(() => {
     if (err) console.error('创建chat_messages表失败:', err);
   });
   
+  // 热点话题表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS hot_topics (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      enabled INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `, (err) => {
+    if (err) console.error('创建hot_topics表失败:', err);
+    else {
+      // 预设默认话题
+      db.run("INSERT OR IGNORE INTO hot_topics (name) VALUES ('强化学习')", []);
+      db.run("INSERT OR IGNORE INTO hot_topics (name) VALUES ('AI Coding')", []);
+      db.run("INSERT OR IGNORE INTO hot_topics (name) VALUES ('大语言模型')", []);
+    }
+  });
+  
+  // 热点论文表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS hot_papers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL,
+      source TEXT NOT NULL,
+      arxiv_id TEXT,
+      title TEXT,
+      abstract TEXT,
+      authors TEXT,
+      categories TEXT,
+      topics TEXT,
+      published_at TEXT,
+      url TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `, (err) => {
+    if (err) console.error('创建hot_papers表失败:', err);
+  });
+  
   // 检查并迁移旧数据
   migrateUuid();
 });

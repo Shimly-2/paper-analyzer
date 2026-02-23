@@ -92,6 +92,118 @@ function saveImagesToDb(uuid, imagesDir) {
     });
 }
 
+// 从 arXiv 获取论文列表
+function fetchArxivPapers(category, maxResults) {
+    return new Promise((resolve, reject) => {
+        const query = `cat:${category}`;
+        const searchUrl = `https://export.arxiv.org/api/query?search_query=${encodeURIComponent(query)}&sortBy=submittedDate&sortOrder=descending&max_results=${maxResults}`;
+        
+        https.get(searchUrl, (res) => {
+            let data = '';
+            res.on('data', c => data += c);
+            res.on('end', () => {
+                try {
+                    const papers = [];
+                    // 简单解析 XML
+                    const entries = data.match(/<entry>[\s\S]*?<\/entry>/g) || [];
+                    entries.forEach(entry => {
+                        const id = entry.match(/<id>https?:\/\/arxiv\.org\/abs\/([^<]+)<\/id>/)?.[1] || '';
+                        const title = entry.match(/<title>([^<]+)<\/title>/)?.[1] || '';
+                        const summary = entry.match(/<summary>([^<]+)<\/summary>/)?.[1] || '';
+                        const authors = [];
+                        let authorMatch;
+                        const authorRegex = /<name>([^<]+)<\/name>/g;
+                        while ((authorMatch = authorRegex.exec(entry)) !== null) {
+                            authors.push(authorMatch[1]);
+                        }
+                        const published = entry.match(/<published>([^<]+)<\/published>/)?.[1] || '';
+                        const pdf = entry.match(/<link[^>]*title="pdf"[^>]*href="([^"]+pdf)"[^>]*>/)?.[1] || '';
+                        
+                        if (id) {
+                            papers.push({ id, title, summary, authors, published, pdf });
+                        }
+                    });
+                    resolve(papers);
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        }).on('error', reject);
+    });
+}
+
+// 从 PapersWithCode 获取 trending papers
+function fetchPapersWithCode(maxResults) {
+    return new Promise((resolve) => {
+        https.get('https://paperswithcode.com/api/v1/papers/?page=1&per_page=' + maxResults, (res) => {
+            let data = '';
+            res.on('data', c => data += c);
+            res.on('end', () => {
+                try {
+                    const json = JSON.parse(data);
+                    const papers = json.results || [];
+                    const results = papers.map(p => ({
+                        id: 'pwc_' + (p.id || ''),
+                        title: p.title || '',
+                        summary: p.abstract || '',
+                        authors: p.authors ? p.authors.map(a => a.name || a) : [],
+                        published: p.published || '',
+                        pdf: p.url_pdf || '',
+                        url: p.url || ''
+                    }));
+                    resolve(results);
+                } catch (e) {
+                    console.error('PapersWithCode API 失败:', e.message);
+                    resolve([]);
+                }
+            });
+        }).on('error', (e) => {
+            console.error('PapersWithCode 请求失败:', e.message);
+            resolve([]);
+        });
+    });
+}
+
+// 从 arXiv 获取每日最新论文（不限制领域）
+function fetchDailyPapers(maxResults) {
+    return new Promise((resolve, reject) => {
+        // 获取最新提交的论文
+        const searchUrl = `https://export.arxiv.org/api/query?search_query=cat:cs.*&sortBy=submittedDate&sortOrder=descending&max_results=${maxResults}`;
+        
+        https.get(searchUrl, (res) => {
+            let data = '';
+            res.on('data', c => data += c);
+            res.on('end', () => {
+                try {
+                    const papers = [];
+                    const entries = data.match(/<entry>[\s\S]*?<\/entry>/g) || [];
+                    entries.forEach(entry => {
+                        const id = entry.match(/<id>https?:\/\/arxiv\.org\/abs\/([^<]+)<\/id>/)?.[1] || '';
+                        const title = entry.match(/<title>([^<]+)<\/title>/)?.[1] || '';
+                        const summary = entry.match(/<summary>([^<]+)<\/summary>/)?.[1] || '';
+                        const authors = [];
+                        let authorMatch;
+                        const authorRegex = /<name>([^<]+)<\/name>/g;
+                        while ((authorMatch = authorRegex.exec(entry)) !== null) {
+                            authors.push(authorMatch[1]);
+                        }
+                        const published = entry.match(/<published>([^<]+)<\/published>/)?.[1] || '';
+                        const pdf = entry.match(/<link[^>]*title="pdf"[^>]*href="([^"]+pdf)"[^>]*>/)?.[1] || '';
+                        const categories = entry.match(/<category[^>]*term="([^"]+)"[^>]*>/g)?.map(c => c.match(/term="([^"]+)"/)?.[1]).filter(Boolean) || [];
+                        
+                        if (id) {
+                            papers.push({ id, title, summary, authors, published, pdf, categories });
+                        }
+                    });
+                    resolve(papers);
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        }).on('error', reject);
+    });
+}
+
 
 function getArxivInfo(arxivId, callback) {
     https.get('https://export.arxiv.org/api/query?id_list='+arxivId, (res) => {
@@ -697,6 +809,198 @@ const server = http.createServer((req, res) => {
                     });
                 });
             } catch(e) { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:e.message})); }
+        });
+        return;
+    }
+    
+    // ===== 热点推荐 API =====
+    
+    // 获取热点话题列表
+    if (url.pathname === '/api/hot/topics' && req.method === 'GET') {
+        db.all('SELECT * FROM hot_topics ORDER BY id', [], (err, rows) => {
+            if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+            else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true, data:rows})); }
+        });
+        return;
+    }
+    
+    // 添加热点话题
+    if (url.pathname === '/api/hot/topics' && req.method === 'POST') {
+        let body = '';
+        req.on('data', c => body += c);
+        req.on('end', () => {
+            try {
+                const data = JSON.parse(body);
+                const name = data.name;
+                if (!name) { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:'no name'})); return; }
+                
+                db.run('INSERT INTO hot_topics (name) VALUES (?)', [name], (err) => {
+                    if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+                    else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true})); }
+                });
+            } catch(e) { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:e.message})); }
+        });
+        return;
+    }
+    
+    // 删除热点话题
+    if (url.pathname.match(/^\/api\/hot\/topics\/\d+$/) && req.method === 'DELETE') {
+        const id = url.pathname.replace('/api/hot/topics/', '');
+        db.run('DELETE FROM hot_topics WHERE id = ?', [id], (err) => {
+            if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+            else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true})); }
+        });
+        return;
+    }
+    
+    // 切换话题启用状态
+    if (url.pathname.match(/^\/api\/hot\/topics\/\d+\/toggle$/) && req.method === 'POST') {
+        const id = url.pathname.replace('/api/hot/topics/', '').replace('/toggle', '');
+        db.run('UPDATE hot_topics SET enabled = NOT enabled WHERE id = ?', [id], (err) => {
+            if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+            else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true})); }
+        });
+        return;
+    }
+    
+    // 获取热点论文列表
+    if (url.pathname === '/api/hot/papers' && req.method === 'GET') {
+        const date = url.searchParams.get('date');
+        const topic = url.searchParams.get('topic');
+        let sql = 'SELECT * FROM hot_papers WHERE 1=1';
+        let params = [];
+        if (date) { sql += ' AND date = ?'; params.push(date); }
+        if (topic) { sql += ' AND topics LIKE ?'; params.push('%' + topic + '%'); }
+        sql += ' ORDER BY date DESC, created_at DESC LIMIT 100';
+        
+        db.all(sql, params, (err, rows) => {
+            if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+            else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true, data:rows})); }
+        });
+        return;
+    }
+    
+    // 手动抓取热点论文（从arXiv）
+    if (url.pathname === '/api/hot/fetch' && req.method === 'POST') {
+        let body = '';
+        req.on('data', c => body += c);
+        req.on('end', async () => {
+            try {
+                // 获取启用的话题
+                db.all('SELECT name FROM hot_topics WHERE enabled = 1', [], async (err, topics) => {
+                    if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); return; }
+                    
+                    const topicNames = topics.map(t => t.name);
+                    const today = new Date().toISOString().split('T')[0];
+                    
+                    // arXiv 分类映射
+                    const categoryMap = {
+                        '强化学习': 'cs.LG',
+                        'AI Coding': 'cs.SE',
+                        '大语言模型': 'cs.CL'
+                    };
+                    
+                    // 获取论文
+                    let addedCount = 0;
+                    
+                    // 1. 从 arXiv 获取
+                    for (const topic of topicNames) {
+                        const category = categoryMap[topic] || 'cs.LG';
+                        try {
+                            const papers = await fetchArxivPapers(category, 10);
+                            for (const p of papers) {
+                                // 检查是否已存在
+                                db.get('SELECT id FROM hot_papers WHERE arxiv_id = ? AND date = ?', [p.id, today], (err, existing) => {
+                                    if (!existing) {
+                                        const authors = p.authors ? p.authors.join(', ') : '';
+                                        db.run('INSERT INTO hot_papers (date, source, arxiv_id, title, abstract, authors, categories, topics, published_at, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                                            [today, 'arXiv', p.id, p.title, p.summary, authors, category, JSON.stringify([topic]), p.published, p.pdf], (err) => {
+                                                if (!err) addedCount++;
+                                            });
+                                    }
+                                });
+                            }
+                        } catch(e) { console.error('arXiv抓取失败:', e); }
+                    }
+                    
+                    // 2. 从 PapersWithCode 获取 trending papers
+                    try {
+                        const pwcPapers = await fetchPapersWithCode(10);
+                        for (const p of pwcPapers) {
+                            // 提取 arxiv ID 如果有
+                            let arxivId = '';
+                            if (p.url && p.url.includes('arxiv.org/abs/')) {
+                                arxivId = p.url.split('arxiv.org/abs/')[1];
+                            }
+                            // 放宽检查：只要同一天没有完全相同的 title 就添加
+                            db.get('SELECT id FROM hot_papers WHERE title = ? AND date = ?', [p.title.substring(0, 100), today], (err, existing) => {
+                                if (!existing) {
+                                    const authors = p.authors ? p.authors.join(', ') : '';
+                                    db.run('INSERT INTO hot_papers (date, source, arxiv_id, title, abstract, authors, topics, published_at, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                                        [today, 'PapersWithCode', arxivId, p.title, p.summary, authors, JSON.stringify(topicNames), p.published, p.url || p.pdf], (err) => {
+                                            if (!err) addedCount++;
+                                        });
+                                }
+                            });
+                        }
+                    } catch(e) { console.error('PapersWithCode抓取失败:', e); }
+                    
+                    // 3. 从 DailyPaper (arXiv全类别) 获取每日最新论文
+                    try {
+                        const dailyPapers = await fetchDailyPapers(15);
+                        for (const p of dailyPapers) {
+                            // 放宽检查：只要同一天没有完全相同的 title 就添加
+                            db.get('SELECT id FROM hot_papers WHERE title = ? AND date = ?', [p.title.substring(0, 100), today], (err, existing) => {
+                                if (!existing) {
+                                    const authors = p.authors ? p.authors.join(', ') : '';
+                                    db.run('INSERT INTO hot_papers (date, source, arxiv_id, title, abstract, authors, categories, topics, published_at, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                                        [today, 'DailyPaper', p.id, p.title, p.summary, authors, p.categories.join(','), JSON.stringify(topicNames), p.published, p.pdf], (err) => {
+                                            if (!err) addedCount++;
+                                        });
+                                }
+                            });
+                        }
+                    } catch(e) { console.error('DailyPaper抓取失败:', e); }
+                    
+                    setTimeout(() => {
+                        res.writeHead(200, {'Content-Type':'application/json'});
+                        res.end(JSON.stringify({success:true, count:addedCount}));
+                    }, 4000);
+                });
+            } catch(e) { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:e.message})); }
+        });
+        return;
+    }
+    
+    // 导入热点论文到论文库
+    if (url.pathname === '/api/hot/import' && req.method === 'POST') {
+        let body = '';
+        req.on('data', c => body += c);
+        req.on('end', () => {
+            try {
+                const data = JSON.parse(body);
+                const arxivId = data.arxiv_id;
+                if (!arxivId) { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:'no arxiv_id'})); return; }
+                
+                const uuid = 'arxiv_' + arxivId;
+                const today = new Date().toISOString().split('T')[0];
+                
+                // 插入论文记录
+                db.run('INSERT OR REPLACE INTO papers (uuid, title, arxiv, abstract, date) VALUES (?, ?, ?, ?, ?)', 
+                    [uuid, data.title, arxivId, data.abstract, today], (err) => {
+                        if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+                        else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true})); }
+                    });
+            } catch(e) { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:e.message})); }
+        });
+        return;
+    }
+    
+    // 获取热点论文日期列表
+    if (url.pathname === '/api/hot/dates' && req.method === 'GET') {
+        db.all('SELECT DISTINCT date FROM hot_papers ORDER BY date DESC', [], (err, rows) => {
+            if (err) { res.writeHead(500, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:err.message})); }
+            else { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:true, data:rows.map(r => r.date)})); }
         });
         return;
     }

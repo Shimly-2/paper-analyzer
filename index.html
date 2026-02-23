@@ -326,7 +326,7 @@ function importPaper() {
 </aside>
 <button class="toggle-btn toggle-left" id="toggleLeft" onclick="toggleSidebar('left')">&#8249;</button>
 <main class="main-content">
-<div class="mode-tabs"><button class="mode-tab active" onclick="switchMode('reading')">阅读模式</button><button class="mode-tab" onclick="switchMode('analysis')">分析报告</button><button class="mode-tab" onclick="switchMode('peerReview')">同行评审</button><button class="mode-tab" onclick="switchMode('semanticSearch')">语义检索</button></div>
+<div class="mode-tabs"><button class="mode-tab active" onclick="switchMode('reading')">阅读模式</button><button class="mode-tab" onclick="switchMode('analysis')">分析报告</button><button class="mode-tab" onclick="switchMode('peerReview')">同行评审</button><button class="mode-tab" onclick="switchMode('semanticSearch')">语义检索</button><button class="mode-tab" onclick="switchMode('hotPapers')">热点推荐</button></div>
 <div class="main-scroll">
 <div id="readingMode">
 <div class="reading-container">
@@ -371,6 +371,22 @@ function importPaper() {
 </div>
 <div id="searchResults" style="padding:0 20px 20px;display:flex;flex-direction:column;gap:12px">
     <p style="color:var(--text-muted);text-align:center;margin-top:40px">输入关键词搜索相关论文</p>
+</div>
+</div>
+
+<div id="hotPapersMode" style="display:none">
+<div style="padding:20px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="paper-action2" onclick="fetchHotPapers()">刷新热点</button>
+        <select id="hotDateSelect" onchange="loadHotPapers()" style="padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);font-size:14px">
+            <option value="">选择日期</option>
+        </select>
+    </div>
+    <div id="hotTopicsList" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <p id="hotPapersStats" style="font-size:12px;color:var(--text-muted);margin-bottom:12px"></p>
+</div>
+<div id="hotPapersList" style="padding:0 20px 20px;display:flex;flex-direction:column;gap:12px">
+    <p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"刷新热点"获取最新论文</p>
 </div>
 </div>
 
@@ -908,6 +924,12 @@ function switchMode(mode) {
     document.getElementById('analysisMode').style.display = mode === 'analysis' ? 'block' : 'none';
     document.getElementById('peerReviewMode').style.display = mode === 'peerReview' ? 'block' : 'none';
     document.getElementById('semanticSearchMode').style.display = mode === 'semanticSearch' ? 'block' : 'none';
+    document.getElementById('hotPapersMode').style.display = mode === 'hotPapers' ? 'block' : 'none';
+    if (mode === 'hotPapers') {
+        loadHotTopics();
+        loadHotPapers();
+        loadHotDates();
+    }
 }
 
 function toggleSidebar(side) {
@@ -1270,6 +1292,146 @@ function generatePeerReview() {
         }
     })
     .catch(function(e){alert('网络错误: '+e.message);btn.innerHTML='生成同行评审';btn.disabled=false;});
+}
+
+// 热点推荐相关函数
+function loadHotTopics() {
+    var apiUrl = 'http://192.168.3.24:5001';
+    fetch(apiUrl + '/api/hot/topics')
+        .then(function(r){return r.json();})
+        .then(function(d){
+            if(d.success && d.data) {
+                var html = '';
+                d.data.forEach(function(t) {
+                    html += '<span style="padding:4px 10px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;font-size:12px;cursor:pointer;opacity:' + (t.enabled ? '1' : '0.5') + '" onclick="toggleHotTopic(' + t.id + ')">' + t.name + '</span>';
+                });
+                html += '<span style="padding:4px 10px;background:var(--accent);color:#fff;border-radius:4px;font-size:12px;cursor:pointer" onclick="addHotTopic()">+ 添加</span>';
+                document.getElementById('hotTopicsList').innerHTML = html;
+            }
+        })
+        .catch(function(e){console.error('加载话题失败:', e);});
+}
+
+function toggleHotTopic(id) {
+    var apiUrl = 'http://192.168.3.24:5001';
+    fetch(apiUrl + '/api/hot/topics/' + id + '/toggle', {method:'POST'})
+        .then(function(r){return r.json();})
+        .then(function(d){
+            if(d.success) loadHotTopics();
+        })
+        .catch(function(e){console.error('切换话题失败:', e);});
+}
+
+function addHotTopic() {
+    var name = prompt('请输入新话题名称:');
+    if(!name) return;
+    var apiUrl = 'http://192.168.3.24:5001';
+    fetch(apiUrl + '/api/hot/topics', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name: name})
+    })
+    .then(function(r){return r.json();})
+    .then(function(d){
+        if(d.success) loadHotTopics();
+        else alert('添加失败: ' + (d.error || '未知错误'));
+    })
+    .catch(function(e){alert('网络错误: ' + e.message);});
+}
+
+function loadHotPapers() {
+    var apiUrl = 'http://192.168.3.24:5001';
+    var date = document.getElementById('hotDateSelect').value;
+    var url = apiUrl + '/api/hot/papers';
+    if(date) url += '?date=' + date;
+    
+    document.getElementById('hotPapersStats').innerHTML = '加载中...';
+    fetch(url)
+        .then(function(r){return r.json();})
+        .then(function(d){
+            if(d.success && d.data) {
+                document.getElementById('hotPapersStats').innerHTML = '共 ' + d.data.length + ' 篇论文';
+                var html = '';
+                d.data.forEach(function(p) {
+                    var topics = p.topics ? JSON.parse(p.topics).join(', ') : '';
+                    html += '<div style="background:var(--bg-secondary);padding:16px;border-radius:8px">';
+                    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">';
+                    html += '<span style="font-size:12px;color:var(--accent);background:rgba(155,126,217,0.2);padding:2px 8px;border-radius:4px">' + p.source + '</span>';
+                    html += '<span style="font-size:11px;color:var(--text-muted)">' + p.date + '</span>';
+                    html += '</div>';
+                    html += '<h3 style="margin:8px 0;font-size:14px;font-weight:600">' + (p.title || '无标题') + '</h3>';
+                    html += '<p style="font-size:12px;color:var(--text-muted);margin:8px 0">' + (p.authors || '') + '</p>';
+                    if(topics) html += '<p style="font-size:11px;color:var(--accent);margin:8px 0">话题: ' + topics + '</p>';
+                    html += '<p style="font-size:12px;color:var(--text-secondary);margin:8px 0">' + (p.abstract || '') + '</p>';
+                    if(p.arxiv_id) {
+                        html += '<button style="margin-top:8px;padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px" onclick="importHotPaper(\'' + p.arxiv_id + '\')">导入论文库</button>';
+                    }
+                    html += '</div>';
+                });
+                document.getElementById('hotPapersList').innerHTML = html || '<p style="color:var(--text-muted);text-align:center;margin-top:40px">暂无热点论文</p>';
+            }
+        })
+        .catch(function(e){console.error('加载热点论文失败:', e);});
+}
+
+function fetchHotPapers() {
+    document.getElementById('hotPapersStats').innerHTML = '正在抓取热点论文...';
+    var apiUrl = 'http://192.168.3.24:5001';
+    fetch(apiUrl + '/api/hot/fetch', {method:'POST'})
+        .then(function(r){return r.json();})
+        .then(function(d){
+            if(d.success) {
+                document.getElementById('hotPapersStats').innerHTML = '抓取完成，新增 ' + (d.count || 0) + ' 篇论文';
+                loadHotPapers();
+            } else {
+                alert('抓取失败: ' + (d.error || '未知错误'));
+            }
+        })
+        .catch(function(e){alert('网络错误: ' + e.message);});
+}
+
+function importHotPaper(arxivId) {
+    var apiUrl = 'http://192.168.3.24:5001';
+    // 查找论文信息
+    fetch(apiUrl + '/api/hot/papers?arxiv_id=' + arxivId)
+        .then(function(r){return r.json();})
+        .then(function(d){
+            if(d.success && d.data && d.data[0]) {
+                var paper = d.data[0];
+                fetch(apiUrl + '/api/hot/import', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({arxiv_id: arxivId, title: paper.title, abstract: paper.abstract})
+                })
+                .then(function(r2){return r2.json();})
+                .then(function(d2){
+                    if(d2.success) {
+                        alert('论文已导入: ' + paper.title);
+                        initPapers(); // 刷新论文列表
+                    } else {
+                        alert('导入失败: ' + (d2.error || '未知错误'));
+                    }
+                })
+                .catch(function(e){alert('网络错误: ' + e.message);});
+            }
+        })
+        .catch(function(e){alert('网络错误: ' + e.message);});
+}
+
+function loadHotDates() {
+    var apiUrl = 'http://192.168.3.24:5001';
+    fetch(apiUrl + '/api/hot/dates')
+        .then(function(r){return r.json();})
+        .then(function(d){
+            if(d.success && d.data) {
+                var html = '<option value="">选择日期</option>';
+                d.data.forEach(function(date) {
+                    html += '<option value="' + date + '">' + date + '</option>';
+                });
+                document.getElementById('hotDateSelect').innerHTML = html;
+            }
+        })
+        .catch(function(e){console.error('加载日期失败:', e);});
 }
 
 function doSemanticSearch() {
