@@ -146,12 +146,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 @media(max-width:1200px){.dimension-cards{grid-template-columns:1fr}}
 @media(max-width:1024px){.sidebar-right{width:300px;position:fixed;right:0;top:52px;bottom:60px;z-index:99}}
 @media(max-width:768px){
-.mobile-menu-btn{display:flex !important}
 .container{height:auto;min-height:calc(100vh - 52px);flex-direction:column}
 .sidebar-left{position:fixed;top:52px;left:0;bottom:60px;width:280px;z-index:50;transform:translateX(-100%);transition:transform .3s}
 .sidebar-left.show{transform:translateX(0)}
 .sidebar-left.collapsed{transform:translateX(-100%);width:280px}
-.toggle-left{display:none}
+.toggle-left{display:block}
+.toggle-right{display:block}
 .reading-container{grid-template-columns:1fr;gap:12px;padding:12px}
 .reading-pane{min-height:300px}
 .pane-content{padding:12px;font-size:13px}
@@ -315,7 +315,7 @@ function importPaper() {
 <div class="nav-left"><span class="nav-logo">Paper Analyzer</span>
 <div class="nav-tabs"><button class="nav-tab active">论文库</button><button class="nav-tab">阅读模式</button><button class="nav-tab">分析报告</button><button class="nav-tab">同行评审</button><button class="nav-tab">语义检索</button></div>
 </div>
-<button class="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button><div class="nav-right"><button class="nav-btn" onclick="showAddPaperModal()">+ 添加论文</button><button class="nav-btn" onclick="clearAllPapers()">清空</button><button class="nav-btn" onclick="showApiSettings()">API</button><button class="nav-btn" onclick="downloadPaper()">导出</button>
+<div class="nav-right"><button class="nav-btn" onclick="showAddPaperModal()">+ 添加论文</button><button class="nav-btn" onclick="clearAllPapers()">清空</button><button class="nav-btn" onclick="showApiSettings()">API</button><button class="nav-btn" onclick="downloadPaper()">导出</button>
 <button class="nav-btn" onclick="showImportModal()">导入</button></div>
 </nav>
 <div class="overlay" id="mobileOverlay" onclick="toggleMobileSidebar()"></div><div class="container">
