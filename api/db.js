@@ -146,7 +146,25 @@ db.serialize(() => {
     // 忽略错误（字段可能已存在）
   });
   
-  // 检查并迁移旧数据
+  // 语义检索论文表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS semantic_papers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      paper_id TEXT UNIQUE,
+      title TEXT,
+      abstract TEXT,
+      chinese_summary TEXT,
+      year INTEGER,
+      citation_count INTEGER,
+      authors TEXT,
+      url TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `, (err) => {
+    if (err) console.error('创建semantic_papers表失败:', err);
+  });
+  
+  // 迁移旧数据
   migrateUuid();
 });
 

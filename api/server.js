@@ -417,12 +417,46 @@ const server = http.createServer((req, res) => {
                 const { query, sort } = JSON.parse(body);
                 if (!query) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:'no query'})); return; }
                 
-                // Call Semantic Scholar API with multiple queries for more results
+                // 关键词权重配置（参考 skill）
+                const keywords = {
+                    'environment': 5, 'setup': 5, 'configuration': 4,
+                    'benchmark': 4, 'evaluation': 3, 'dataset': 3,
+                    'agent': 3, 'LLM': 3, 'model': 2, 'docker': 4, 'container': 3,
+                    'software': 3, 'engineering': 3, 'automation': 3,
+                    'testing': 3, 'debugging': 3, 'build': 2, 'compile': 2,
+                    'deployment': 2, 'machine learning': 4, 'deep learning': 4,
+                    'neural': 3, 'transformer': 3, 'GPT': 3, 'language': 2,
+                    'reinforcement': 3, 'RL': 3, 'robotics': 3, 'computer vision': 4,
+                    'NLP': 3, 'multimodal': 3, 'embedding': 3, 'attention': 2
+                };
+                
+                // 计算相似度分数
+                function calcSimilarity(paper, query) {
+                    const queryLower = query.toLowerCase();
+                    const titleLower = (paper.title || '').toLowerCase();
+                    const abstractLower = (paper.abstract || '').toLowerCase();
+                    
+                    let score = 0;
+                    for (const [kw, weight] of Object.entries(keywords)) {
+                        if (titleLower.includes(kw)) score += weight * 3;
+                        if (abstractLower.includes(kw)) score += weight * 2;
+                    }
+                    // 用户查询词也作为关键词
+                    const queryWords = queryLower.split(/\s+/);
+                    queryWords.forEach(qw => {
+                        if (qw.length > 2) {
+                            if (titleLower.includes(qw)) score += 10;
+                            if (abstractLower.includes(qw)) score += 5;
+                        }
+                    });
+                    return Math.min(Math.round(score), 100);
+                }
+                
+                // Call Semantic Scholar API
                 const https = require('https');
                 const apiUrl = 'api.semanticscholar.org';
                 
-                // Fetch from multiple offsets and sort methods
-                const sortMethod = sort || 'citationCount';
+                const sortMethod = sort || 'relevance';
                 const queries = [
                     '/graph/v1/paper/search?query=' + encodeURIComponent(query) + '&limit=100&offset=0&sort=' + sortMethod + '&fields=paperId,title,authors,year,citationCount,venue,abstract,url,externalIds'
                 ];
@@ -442,7 +476,7 @@ const server = http.createServer((req, res) => {
                                     return {
                                         paperId: arxivId || p.paperId || '',
                                         title: p.title || '',
-                                        abstract: (p.abstract || '').substring(0, 500),
+                                        abstract: p.abstract || '',
                                         year: p.year || 2024,
                                         citationCount: p.citationCount || 0,
                                         authors: (p.authors || []).slice(0, 5).map(a => a.name),
@@ -454,16 +488,76 @@ const server = http.createServer((req, res) => {
                             } catch(e) {}
                             completed++;
                             if (completed === queries.length) {
-                                // Sort by user choice
+                                // 计算相似度分数
+                                allPapers.forEach(p => {
+                                    p.similarity = calcSimilarity(p, query);
+                                });
+                                
+                                // 按用户选择排序
                                 if (sort === 'year') {
                                     allPapers.sort((a, b) => (b.year || 0) - (a.year || 0));
-                                } else if (sort === 'relevance') {
-                                    // Keep original order for relevance
-                                } else {
+                                } else if (sort === 'citationCount') {
                                     allPapers.sort((a, b) => b.citationCount - a.citationCount);
+                                } else {
+                                    allPapers.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
                                 }
-                                res.writeHead(200, {'Content-Type':'application/json'});
-                                res.end(JSON.stringify({success:true, papers:allPapers.slice(0, 100)}));
+                                
+                                const resultPapers = allPapers;
+                                
+                                // 先从数据库获取已存在的总结
+                                const paperIds = resultPapers.map(p => p.paperId).filter(id => id);
+                                if (paperIds.length > 0) {
+                                    db.all('SELECT paper_id, chinese_summary FROM semantic_papers WHERE paper_id IN (' + paperIds.map(() => '?').join(',') + ')', paperIds, (err, rows) => {
+                                        const summaryMap = {};
+                                        if (rows) {
+                                            rows.forEach(row => {
+                                                summaryMap[row.paper_id] = row.chinese_summary;
+                                            });
+                                        }
+                                        
+                                        resultPapers.forEach(p => {
+                                            if (summaryMap[p.paperId]) {
+                                                p.chinese_summary = summaryMap[p.paperId];
+                                            }
+                                        });
+                                        
+                                        const papersToSummarize = resultPapers.filter(p => p.paperId && p.abstract && p.abstract.length > 50 && !p.chinese_summary);
+                                        
+                                        if (papersToSummarize.length > 0) {
+                                            let prompt = '请为以下论文生成一句话中文总结。按固定格式输出，每行格式为：###论文N### 总结内容\n\n';
+                                            papersToSummarize.forEach((p, i) => {
+                                                const abstract = p.abstract ? p.abstract.substring(0, 1000) : '';
+                                                prompt += '###论文'+(i+1)+'###\n标题: '+p.title+'\n摘要: '+abstract+'\n\n';
+                                            });
+                                            
+                                            callMiniMax(prompt, '你是一个专业的AI学术论文总结助手。为每篇论文生成一句简洁的中文总结，突出论文的核心贡献或创新点。输出格式：每行以"###论文N###"开头，后面直接跟总结内容。', (result) => {
+                                                if (result.text) {
+                                                    const lines = result.text.split('\n');
+                                                    lines.forEach((line) => {
+                                                        const match = line.match(/###论文(\d+)###\s*(.+)/);
+                                                        if (match) {
+                                                            const idx = parseInt(match[1]) - 1;
+                                                            const summary = match[2].trim();
+                                                            if (papersToSummarize[idx] && summary) {
+                                                                papersToSummarize[idx].chinese_summary = summary;
+                                                                db.run('INSERT OR REPLACE INTO semantic_papers (paper_id, title, abstract, chinese_summary, year, citation_count, authors, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                                                                    [papersToSummarize[idx].paperId, papersToSummarize[idx].title, papersToSummarize[idx].abstract, summary, papersToSummarize[idx].year, papersToSummarize[idx].citationCount, JSON.stringify(papersToSummarize[idx].authors), papersToSummarize[idx].url]);
+                                                            }
+                                                        }
+                                                    });
+                                                }
+                                                res.writeHead(200, {'Content-Type':'application/json'});
+                                                res.end(JSON.stringify({success:true, papers:resultPapers}));
+                                            });
+                                        } else {
+                                            res.writeHead(200, {'Content-Type':'application/json'});
+                                            res.end(JSON.stringify({success:true, papers:resultPapers}));
+                                        }
+                                    });
+                                } else {
+                                    res.writeHead(200, {'Content-Type':'application/json'});
+                                    res.end(JSON.stringify({success:true, papers:resultPapers}));
+                                }
                             }
                         });
                     }).on('error', () => {
@@ -480,6 +574,8 @@ const server = http.createServer((req, res) => {
     }
     
     // Convert markdown to HTML with MiniMax
+
+// Convert markdown to HTML with MiniMax
     if (url.pathname === '/api/convert' && req.method === 'POST') {
         let body = '';
         req.on('data', c => body += c);
@@ -880,15 +976,18 @@ const server = http.createServer((req, res) => {
                             // 使用 Promise 包装插入操作
                             const insertPromises = papers.map(p => {
                                 return new Promise((resolve) => {
-                                    db.get('SELECT id FROM hot_papers WHERE arxiv_id = ? AND date = ?', [p.id, today], (err, existing) => {
+                                    // 检查是否已存在且有中文总结，有则跳过
+                                    db.get('SELECT id FROM hot_papers WHERE arxiv_id = ? AND date = ? AND chinese_summary IS NOT NULL AND chinese_summary != ""', [p.id, today], (err, existing) => {
                                         if (!existing) {
                                             const authors = p.authors ? p.authors.join(', ') : '';
-                                            db.run('INSERT INTO hot_papers (date, source, arxiv_id, title, abstract, authors, categories, topics, published_at, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                                            // 存在就更新，不存在就插入
+                                            db.run('INSERT OR REPLACE INTO hot_papers (date, source, arxiv_id, title, abstract, authors, categories, topics, published_at, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
                                                 [today, 'arXiv', p.id, p.title, p.summary, authors, category, JSON.stringify([topic]), p.published, p.pdf], (err) => {
                                                     if (!err) addedCount++;
                                                     resolve();
                                                 });
                                         } else {
+                                            addedCount++;
                                             resolve();
                                         }
                                     });
@@ -906,17 +1005,17 @@ const server = http.createServer((req, res) => {
                         // 使用 Promise 包装插入操作，确保全部完成
                         const insertPromises = dailyPapers.map(p => {
                             return new Promise((resolve) => {
-                                // 更严格去重：检查 title 相同或 arxiv_id 相同
-                                const checkTitle = p.title.substring(0, 100);
-                                db.get('SELECT id FROM hot_papers WHERE (title = ? OR arxiv_id = ?) AND date = ?', [checkTitle, p.id, today], (err, existing) => {
+                                // 检查是否已存在且有中文总结，有则跳过
+                                db.get('SELECT id FROM hot_papers WHERE arxiv_id = ? AND date = ? AND chinese_summary IS NOT NULL AND chinese_summary != ""', [p.id, today], (err, existing) => {
                                     if (!existing) {
                                         const authors = p.authors ? p.authors.join(', ') : '';
-                                        db.run('INSERT INTO hot_papers (date, source, arxiv_id, title, abstract, authors, categories, topics, published_at, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                                        db.run('INSERT OR REPLACE INTO hot_papers (date, source, arxiv_id, title, abstract, authors, categories, topics, published_at, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
                                             [today, 'DailyPaper', p.id, p.title, p.summary, authors, p.categories.join(','), JSON.stringify(topicNames), p.published, p.pdf], (err) => {
                                                 if (!err) addedCount++;
                                                 resolve();
                                             });
                                     } else {
+                                        addedCount++;
                                         resolve();
                                     }
                                 });

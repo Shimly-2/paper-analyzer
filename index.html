@@ -1341,7 +1341,14 @@ function addHotTopic() {
 
 function loadHotPapers() {
     var apiUrl = 'http://192.168.3.24:5001';
-    var date = document.getElementById('hotDateSelect').value;
+    var dateSelect = document.getElementById('hotDateSelect');
+    var date = dateSelect.value;
+    // 默认当天
+    if (!date) {
+        var today = new Date().toISOString().split('T')[0];
+        dateSelect.value = today;
+        date = today;
+    }
     var url = apiUrl + '/api/hot/papers';
     if(date) url += '?date=' + date;
     
@@ -1430,10 +1437,17 @@ function loadHotDates() {
         .then(function(r){return r.json();})
         .then(function(d){
             if(d.success && d.data) {
-                var html = '<option value="">选择日期</option>';
+                var today = new Date().toISOString().split('T')[0];
+                // 如果有当天日期，默认选中
+                var hasToday = d.data.includes(today);
+                var html = hasToday ? '' : '<option value="">选择日期</option>';
                 d.data.forEach(function(date) {
-                    html += '<option value="' + date + '">' + date + '</option>';
+                    var selected = date === today ? ' selected' : '';
+                    html += '<option value="' + date + '"' + selected + '>' + date + '</option>';
                 });
+                if (!hasToday) {
+                    html += '<option value="' + today + '">' + today + '</option>';
+                }
                 document.getElementById('hotDateSelect').innerHTML = html;
             }
         })
@@ -1457,12 +1471,14 @@ function doSemanticSearch() {
                 return;
             }
             var html = papers.map(function(p){
-                var sim = p.similarity ? Math.round(p.similarity * 100) + '%' : '';
+                var sim = p.similarity ? p.similarity + '%' : '';
+                var chineseSummaryHtml = p.chinese_summary ? '<p style="font-size:13px;color:#10b981;margin:8px 0;font-weight:500;background:rgba(16,185,129,0.1);padding:8px;border-radius:4px;border-left:3px solid #10b981">'+p.chinese_summary+'</p>' : '';
                 return '<div style="background:var(--bg-secondary);border-radius:8px;padding:16px;cursor:pointer">' +
                     '<div style="font-size:14px;font-weight:600;margin-bottom:8px">'+p.title+'</div>' +
+                    chineseSummaryHtml +
                     '<div style="font-size:12px;color:var(--text-muted)">'+(p.year||'')+' | '+(p.citationCount||0)+' citations'+(sim ? ' | 相似度: '+sim : '')+'</div>' +
                     '<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">'+(p.abstract||'')+'</div>' +
-                    '<button class="paper-action" style="margin-top:12px;padding:6px 16px;font-size:12px" onclick="event.stopPropagation();importSearchPaper(\''+p.paperId+'\',\''+encodeURIComponent(p.title)+'\')">导入论文库</button>' +
+                    '<button style="margin-top:8px;padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px" onclick="event.stopPropagation();importSearchPaper(\''+p.paperId+'\',\''+encodeURIComponent(p.title)+'\')">导入论文库</button>' +
                     '</div>';
             }).join('');
             document.getElementById('searchResults').innerHTML = html;
