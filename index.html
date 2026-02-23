@@ -942,23 +942,31 @@ function toggleSidebar(side) {
     var sidebarWidth = isMobile ? 280 : 300;
     
     if(side === 'left'){
+        var isCollapsed = left.classList.contains('collapsed');
+        // 先切换状态
         left.classList.toggle('collapsed');
         tl.classList.toggle('collapsed');
-        tl.innerHTML = left.classList.contains('collapsed') ? '&#8250;' : '&#8249;';
+        // 根据新的状态设置位置
+        var newCollapsed = left.classList.contains('collapsed');
+        tl.innerHTML = newCollapsed ? '&#8250;' : '&#8249;';
         if(isMobile) {
-            // 移动端：CSS left:280px，JS transform控制位置
-            // 隐藏: translateX(-280px) → 位置 280-280=0
-            // 显示: translateX(0) → 位置 280+0=280px
-            left.style.transform = left.classList.contains('collapsed') ? 'translateX(-100%)' : 'translateX(0)';
-            tl.style.transform = left.classList.contains('collapsed') ? 'translateX(-' + sidebarWidth + 'px)' : 'translateX(0)';
+            // 移动端根据collapsed状态决定位置
+            // collapsed(隐藏): left - translate = 0
+            // 显示: left + 0 = 280px
+            tl.style.transform = newCollapsed ? 'translateX(-' + sidebarWidth + 'px)' : 'translateX(0)';
+            left.style.transform = newCollapsed ? 'translateX(-100%)' : 'translateX(0)';
         }
     } else {
+        var isCollapsed = right.classList.contains('collapsed');
         right.classList.toggle('collapsed');
         tr.classList.toggle('collapsed');
-        tr.innerHTML = right.classList.contains('collapsed') ? '&#8249;' : '&#8250;';
+        var newCollapsed = right.classList.contains('collapsed');
+        tr.innerHTML = newCollapsed ? '&#8249;' : '&#8250;';
         if(isMobile) {
-            right.style.transform = right.classList.contains('collapsed') ? 'translateX(100%)' : 'translateX(0)';
-            tr.style.transform = right.classList.contains('collapsed') ? 'translateX(' + sidebarWidth + 'px)' : 'translateX(0)';
+            // collapsed(隐藏): right + translate = 0
+            // 显示: right + 0 = 280px
+            tr.style.transform = newCollapsed ? 'translateX(' + sidebarWidth + 'px)' : 'translateX(0)';
+            right.style.transform = newCollapsed ? 'translateX(100%)' : 'translateX(0)';
         }
     }
 }
@@ -1802,9 +1810,11 @@ window.addEventListener('resize', function() {
         // 侧栏默认隐藏
         left.style.transform = 'translateX(-100%)';
         right.style.transform = 'translateX(100%)';
-        // toggle按钮初始位置（在侧栏内侧边缘）
-        tl.style.transform = 'translateX(0)';
-        tr.style.transform = 'translateX(0)';
+        left.classList.add('collapsed');
+        right.classList.add('collapsed');
+        // toggle按钮初始位置：在侧栏内侧(位置0)，通过translateX移动
+        tl.style.transform = 'translateX(-280px)';
+        tr.style.transform = 'translateX(280px)';
     }
 })();
 </script>
