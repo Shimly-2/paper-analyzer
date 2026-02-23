@@ -132,7 +132,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .form-file:hover{border-color:var(--accent)}
 .form-file input{display:none}
 .file-list{margin-top:12px}
-.file-item{display:flex;justify-content:space-between;padding:8px 12px;background:var(--bg-tertiary);border-radius:6px;margin-bottom:6px;font-size:12px}
+.file-item{display:flex;justify-content:space-between;padding:8px 12px;background:var(--bg-tertiary);border-radius:6px;margin-bottom:6px;font-size:16px}
 .file-remove{cursor:pointer;color:var(--red)}
 .modal-footer{padding:16px 20px;border-top:1px solid var(--border-color);display:flex;justify-content:flex-end;gap:8px}
 .tag-input-wrapper{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
@@ -150,12 +150,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .sidebar-left{position:fixed;top:52px;left:0;bottom:60px;width:280px;z-index:50;transform:translateX(-100%);transition:transform .3s}
 .sidebar-left.show{transform:translateX(0)}
 .sidebar-left.collapsed{transform:translateX(-100%);width:280px}
-.toggle-left{display:block;position:fixed}
-.toggle-right{display:block;position:fixed}
+.toggle-left{display:block;left:280px}
+.toggle-right{display:block;right:280px}
 .reading-container{grid-template-columns:1fr;gap:12px;padding:12px}
 .reading-pane{min-height:300px}
 .pane-content{padding:12px;font-size:13px}
-.pane-header{padding:10px 12px;font-size:12px}
+.pane-header{padding:10px 12px;font-size:16px}
 .nav-tabs{display:none}
 .nav-right{padding-right:0}
 .nav-btn{padding:6px 10px;font-size:11px}
@@ -939,15 +939,18 @@ function toggleSidebar(side) {
     var tl = document.getElementById('toggleLeft');
     var tr = document.getElementById('toggleRight');
     var isMobile = window.innerWidth <= 1024;
+    var sidebarWidth = isMobile ? 280 : 300;
     
     if(side === 'left'){
         left.classList.toggle('collapsed');
         tl.classList.toggle('collapsed');
         tl.innerHTML = left.classList.contains('collapsed') ? '&#8250;' : '&#8249;';
         if(isMobile) {
-            // 移动端用transform同步移动
+            // 移动端：CSS left:280px，JS transform控制位置
+            // 隐藏: translateX(-280px) → 位置 280-280=0
+            // 显示: translateX(0) → 位置 280+0=280px
             left.style.transform = left.classList.contains('collapsed') ? 'translateX(-100%)' : 'translateX(0)';
-            tl.style.transform = left.classList.contains('collapsed') ? 'translateX(0)' : 'translateX(280px)';
+            tl.style.transform = left.classList.contains('collapsed') ? 'translateX(-' + sidebarWidth + 'px)' : 'translateX(0)';
         }
     } else {
         right.classList.toggle('collapsed');
@@ -955,7 +958,7 @@ function toggleSidebar(side) {
         tr.innerHTML = right.classList.contains('collapsed') ? '&#8249;' : '&#8250;';
         if(isMobile) {
             right.style.transform = right.classList.contains('collapsed') ? 'translateX(100%)' : 'translateX(0)';
-            tr.style.transform = right.classList.contains('collapsed') ? 'translateX(0)' : 'translateX(-280px)';
+            tr.style.transform = right.classList.contains('collapsed') ? 'translateX(' + sidebarWidth + 'px)' : 'translateX(0)';
         }
     }
 }
