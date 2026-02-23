@@ -443,7 +443,7 @@ function initChat() {
 }
 
 function loadChatSessions() {
-    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
     fetch(apiUrl + '/api/chat/sessions')
         .then(function(r){return r.json();})
         .then(function(d){
@@ -479,7 +479,7 @@ function renderChatTabs() {
 }
 
 function createNewChat() {
-    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
     var paperId = currentPaper ? currentPaper.id : null;
     fetch(apiUrl + '/api/chat/sessions', {
         method: 'POST',
@@ -506,7 +506,7 @@ function switchChatTab(uuid) {
 function deleteChat(uuid) {
     if(!confirm('确定删除这个对话吗？')) return;
     
-    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
     fetch(apiUrl + '/api/chat/sessions/' + uuid, {method: 'DELETE'})
         .then(function(r){return r.json();})
         .then(function(d){
@@ -532,7 +532,7 @@ function loadChatMessages() {
         return;
     }
     
-    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
     fetch(apiUrl + '/api/chat/sessions/' + currentChatSession + '/messages')
         .then(function(r){return r.json();})
         .then(function(d){
@@ -553,8 +553,8 @@ function loadChatMessages() {
 // 初始化：从 SQLite 加载论文
     
 function initPapers() {
-    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
-    if (!apiUrl) apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
+    if (!apiUrl) apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
     
     var papersUrl = apiUrl + '/api/papers';
     fetch(papersUrl)
@@ -596,8 +596,8 @@ function initPapers() {
 }
 
 function savePapers() { 
-    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
-    if (!apiUrl) apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
+    if (!apiUrl) apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
     papers.forEach(function(p) {
         // 确保 tags 是数组
         var paperToSave = Object.assign({}, p);
@@ -670,7 +670,7 @@ function updateContent() {
         return;
     }
     if (currentPaper.parsed && currentPaper.original) {
-        var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
+        var apiUrl = null || 'https://truly-keeps-root-comply.trycloudflare.com';
         var content = currentPaper.original.replace(/\/api\/images\//g, apiUrl + '/api/images/');
         document.getElementById("originalContent").innerHTML = content;
         renderKaTeX();
@@ -720,7 +720,7 @@ function parsePaper() {
     btn.innerHTML = '<span class="loading"></span> 解析中...';
     document.getElementById('originalContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在解析论文，请稍候...</p>';
     
-    var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = null || 'https://truly-keeps-root-comply.trycloudflare.com';
     
     // Check if it's a PDF file
     if (currentPaper.arxiv === 'PDF' && currentPaper.pdfUrl) {
@@ -748,7 +748,7 @@ function parsePaper() {
                         currentPaper.original = d2.text;
                         currentPaper.parsed = true;
                         savePapers();
-                        var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
+                        var apiUrl = null || 'https://truly-keeps-root-comply.trycloudflare.com';
                         var content = d2.text.replace(/\/api\/images\//g, apiUrl + '/api/images/');
                         document.getElementById('originalContent').innerHTML = content;
                         renderKaTeX();
@@ -770,7 +770,7 @@ function parsePaper() {
     }
     
     // Regular arXiv parsing
-    var fallbackUrls = ['https://arlene-unprompted-janette.ngrok-free.dev', 'http://127.0.0.1:5001'];
+    var fallbackUrls = ['https://truly-keeps-root-comply.trycloudflare.com', 'http://127.0.0.1:5001'];
     var payload = {
         sourceType: 'arxiv',
         source: currentPaper.arxiv,
@@ -802,7 +802,7 @@ function parsePaper() {
                     currentPaper.original = d.text;
                     currentPaper.parsed = true;
                     savePapers();
-                    var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
+                    var apiUrl = null || 'https://truly-keeps-root-comply.trycloudflare.com';
                     var content = d.text.replace(/\/api\/images\//g, apiUrl + '/api/images/');
                     document.getElementById('originalContent').innerHTML = content;
                     renderKaTeX();
@@ -849,9 +849,9 @@ function translatePaper() {
     btn.innerHTML = '<span class="loading"></span> 翻译中...';
     document.getElementById('translatedContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在翻译论文，请稍候...</p>';
     
-    var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = null || 'https://truly-keeps-root-comply.trycloudflare.com';
     // Fallback URLs
-    var fallbackUrls = ['https://arlene-unprompted-janette.ngrok-free.dev', 'http://127.0.0.1:5001'];
+    var fallbackUrls = ['https://truly-keeps-root-comply.trycloudflare.com', 'http://127.0.0.1:5001'];
     var htmlContent = currentPaper.original;
     
     fetch(apiUrl + '/api/translate', {
@@ -865,7 +865,7 @@ function translatePaper() {
             currentPaper.translated = d.text;
             currentPaper.abstract = currentPaper.abstract || '';
             savePapers();
-            var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
+            var apiUrl = null || 'https://truly-keeps-root-comply.trycloudflare.com';
             var translated = d.text.replace(/\/api\/images\//g, apiUrl + '/api/images/');
             document.getElementById('translatedContent').innerHTML = translated;
             renderKaTeX();
@@ -883,7 +883,7 @@ function translatePaper() {
 
 function deletePaper(id) {
     if(confirm("确定删除这篇论文？")) {
-        var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+        var apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
         // 调用后端 DELETE API
         fetch(apiUrl + '/api/papers/' + id, {method: 'DELETE'})
             .then(function(r) { return r.json(); })
@@ -1083,7 +1083,7 @@ function addPaper(){
         ids.forEach(function(id,i){newPapers.push({id:newId+i,title:"论文 " + id.trim(),arxiv:id.trim(),uuid:generateUuid('arxiv', id.trim()),date:new Date().toISOString().split('T')[0],tags:allTags,abstract:"",translated:"",original:"",analysis:"",peerReview:"",parsed:false});});
     } else if(type === 'pdf' && pdfFiles && pdfFiles.length > 0){
         // Upload PDFs first
-        var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
+        var apiUrl = null || 'https://truly-keeps-root-comply.trycloudflare.com';
         var uploadPromises = pdfFiles.map(function(f, i) {
             var formData = new FormData();
             formData.append('file', f);
@@ -1166,7 +1166,7 @@ function sendMessage(){
     m.scrollTop = m.scrollTop = m.scrollHeight;
     input.value = '';
     
-    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
     
     // 如果没有会话，先创建
     if(chatSessions.length === 0) {
@@ -1229,7 +1229,7 @@ renderPaperList();
 updateContent();
 
 function showApiSettings(){
-    var url = prompt("请输入 API 服务器地址:", localStorage.getItem("apiUrl") || 'https://arlene-unprompted-janette.ngrok-free.dev');
+    var url = prompt("请输入 API 服务器地址:", localStorage.getItem("apiUrl") || 'https://truly-keeps-root-comply.trycloudflare.com');
     if(url){
         // localStorage.setItem("apiUrl", url);
         alert("API 已更新为: " + url);
@@ -1326,7 +1326,7 @@ function generatePeerReview() {
     btn.disabled = true;
     document.getElementById('peerReviewContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在生成同行评审，请稍候...</p>';
     
-    var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = null || 'https://truly-keeps-root-comply.trycloudflare.com';
     
     // First get peer review - 截断内容以避免上下文溢出
     var content = currentPaper.original ? currentPaper.original.substring(0, 196608) : '';
@@ -1371,7 +1371,7 @@ function generatePeerReview() {
 
 // 热点推荐相关函数
 function loadHotTopics() {
-    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
     fetch(apiUrl + '/api/hot/topics')
         .then(function(r){return r.json();})
         .then(function(d){
@@ -1388,7 +1388,7 @@ function loadHotTopics() {
 }
 
 function toggleHotTopic(id) {
-    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
     fetch(apiUrl + '/api/hot/topics/' + id + '/toggle', {method:'POST'})
         .then(function(r){return r.json();})
         .then(function(d){
@@ -1400,7 +1400,7 @@ function toggleHotTopic(id) {
 function addHotTopic() {
     var name = prompt('请输入新话题名称:');
     if(!name) return;
-    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
     fetch(apiUrl + '/api/hot/topics', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
@@ -1415,7 +1415,7 @@ function addHotTopic() {
 }
 
 function loadHotPapers() {
-    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
     var dateSelect = document.getElementById('hotDateSelect');
     var date = dateSelect.value;
     // 默认当天
@@ -1461,7 +1461,7 @@ function loadHotPapers() {
 
 function fetchHotPapers() {
     document.getElementById('hotPapersStats').innerHTML = '正在抓取热点论文...';
-    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
     fetch(apiUrl + '/api/hot/fetch', {method:'POST'})
         .then(function(r){return r.json();})
         .then(function(d){
@@ -1479,7 +1479,7 @@ function fetchHotPapers() {
 }
 
 function importHotPaper(arxivId) {
-    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
     // 查找论文信息
     fetch(apiUrl + '/api/hot/papers?arxiv_id=' + arxivId)
         .then(function(r){return r.json();})
@@ -1507,7 +1507,7 @@ function importHotPaper(arxivId) {
 }
 
 function loadHotDates() {
-    var apiUrl = 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = 'https://truly-keeps-root-comply.trycloudflare.com';
     fetch(apiUrl + '/api/hot/dates')
         .then(function(r){return r.json();})
         .then(function(d){
@@ -1534,7 +1534,7 @@ function doSemanticSearch() {
     if (!query) { alert('请输入搜索关键词'); return; }
     document.getElementById('searchStats').innerHTML = '正在搜索...';
     document.getElementById('searchResults').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">搜索中，请稍候...</p>';
-    var apiUrl = (null || 'https://arlene-unprompted-janette.ngrok-free.dev') + '/api/semanticSearch';
+    var apiUrl = (null || 'https://truly-keeps-root-comply.trycloudflare.com') + '/api/semanticSearch';
     fetch(apiUrl, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:query, sort:document.getElementById('sortBy').value})})
     .then(function(r){return r.json();})
     .then(function(d){
@@ -1571,7 +1571,7 @@ function doSemanticSearch() {
 function importSearchPaper(paperId, title, hasArxiv) {
     var papersList = papers.slice();
     var paperTitle = title ? decodeURIComponent(title) : '论文 ' + paperId;
-    var apiUrl = (null || 'https://arlene-unprompted-janette.ngrok-free.dev');
+    var apiUrl = (null || 'https://truly-keeps-root-comply.trycloudflare.com');
     
     // Check if paperId is valid arXiv format
     var isValidArxiv = paperId && paperId.match(/^\d{4}\.\d{4,5}$/);
@@ -1641,9 +1641,9 @@ function generateAnalysis() {
     btn.disabled = true;
     document.getElementById('analysisContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在生成分析报告，请稍候...</p>';
     
-    var apiUrl = null || 'https://arlene-unprompted-janette.ngrok-free.dev';
+    var apiUrl = null || 'https://truly-keeps-root-comply.trycloudflare.com';
     // Fallback URLs
-    var fallbackUrls = ['https://arlene-unprompted-janette.ngrok-free.dev', 'http://127.0.0.1:5001'];
+    var fallbackUrls = ['https://truly-keeps-root-comply.trycloudflare.com', 'http://127.0.0.1:5001'];
     
     // First get analysis - 截断内容以避免上下文溢出
     var content = currentPaper.original ? currentPaper.original.substring(0, 196608) : '';
