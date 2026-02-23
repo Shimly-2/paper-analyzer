@@ -115,7 +115,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .chat-bubble.user{background:var(--accent);color:white;align-self:flex-end}
 .chat-input-area{padding:16px;border-top:1px solid var(--border-color)}
 .chat-input-wrapper{display:flex;gap:8px}
-.chat-input{flex:1;padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:13px}
+.chat-input{flex:1;padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:16px}
 .send-btn{padding:10px 16px;background:var(--accent);border:none;border-radius:8px;color:white;cursor:pointer}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:200}
 .modal-overlay.show{display:flex}
@@ -319,7 +319,7 @@ function importPaper() {
 <button class="nav-btn" onclick="showImportModal()">导入</button></div>
 </nav>
 <div class="overlay" id="mobileOverlay" onclick="toggleMobileSidebar()"></div><div class="container">
-<aside class="sidebar-left collapsed" id="sidebarLeft">
+<aside class="sidebar-left" id="sidebarLeft">
 <div class="sidebar-header"><input type="text" class="search-input" placeholder="搜索论文..." id="paperSearch" oninput="renderPaperList()">
 <div class="filter-tags" id="filterTags"></div>
 </div>
@@ -393,7 +393,7 @@ function importPaper() {
 
 </main>
 <button class="toggle-btn toggle-right" id="toggleRight" onclick="toggleSidebar('right')">&#8250;</button>
-<aside class="sidebar-right collapsed" id="sidebarRight">
+<aside class="sidebar-right" id="sidebarRight">
 <div class="chat-header" style="flex-direction:column;align-items:stretch;border-bottom:none">
     <div style="display:flex;align-items:center;padding:4px 0 4px 0">
         <span style="font-size:13px;font-weight:600">Agent 对话</span>
