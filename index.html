@@ -150,8 +150,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .sidebar-left{position:fixed;top:52px;left:0;bottom:60px;width:280px;z-index:50;transform:translateX(-100%);transition:transform .3s}
 .sidebar-left.show{transform:translateX(0)}
 .sidebar-left.collapsed{transform:translateX(-100%);width:280px}
-.toggle-left{display:block;left:280px}
-.toggle-right{display:block;right:280px}
+.toggle-left{display:none}
+.toggle-right{display:none}
 .reading-container{grid-template-columns:1fr;gap:12px;padding:12px}
 .reading-pane{min-height:300px}
 .pane-content{padding:12px;font-size:13px}
@@ -408,7 +408,7 @@ function importPaper() {
 <div class="chat-input-area"><div class="chat-input-wrapper"><input type="text" class="chat-input" id="chatInput" placeholder="输入问题..." onkeypress="if(event.key==='Enter')sendMessage()"><button class="send-btn" onclick="sendMessage()">发送</button></div></div>
 </aside>
 </div>
-<nav class="mobile-nav"><div class="mobile-nav-items"><div class="mobile-item active" onclick="mobileNav(1)"><span class="mobile-icon">📖</span><span>阅读</span></div><div class="mobile-item" onclick="mobileNav(2)"><span class="mobile-icon">📊</span><span>分析</span></div><div class="mobile-item" onclick="mobileNav(3)"><span class="mobile-icon">📝</span><span>评审</span></div><div class="mobile-item" onclick="mobileNav(4)"><span class="mobile-icon">🔍</span><span>检索</span></div><div class="mobile-item" onclick="mobileNav(5)"><span class="mobile-icon">🔥</span><span>热点</span></div></div></nav>
+<nav class="mobile-nav"><div class="mobile-nav-items"><div class="mobile-item active" onclick="mobileNav(1)"><span class="mobile-icon">📚</span><span>论文</span></div><div class="mobile-item" onclick="mobileNav(2)"><span class="mobile-icon">📖</span><span>阅读</span></div><div class="mobile-item" onclick="mobileNav(3)"><span class="mobile-icon">📊</span><span>分析</span></div><div class="mobile-item" onclick="mobileNav(4)"><span class="mobile-icon">📝</span><span>评审</span></div><div class="mobile-item" onclick="mobileNav(5)"><span class="mobile-icon">🔍</span><span>检索</span></div><div class="mobile-item" onclick="mobileNav(6)"><span class="mobile-icon">🔥</span><span>热点</span></div><div class="mobile-item" onclick="mobileNav(7)"><span class="mobile-icon">💬</span><span>对话</span></div></div></nav>
 <div class="modal-overlay" id="addPaperModal">
 <div class="modal"><div class="modal-header"><span class="modal-title">添加论文</span><span class="modal-close" onclick="hideAddPaperModal()">x</span></div>
 <div class="modal-body">
@@ -1246,21 +1246,75 @@ function toggleMobileSidebar(){
 function mobileNav(tab){
     document.querySelectorAll('.mobile-item').forEach(function(el){el.classList.remove('active');});
     event.target.closest('.mobile-item').classList.add('active');
+    
+    var isMobile = window.innerWidth <= 1024;
+    var left = document.getElementById('sidebarLeft');
+    var right = document.getElementById('sidebarRight');
+    
     if(tab === 1){
-        // 阅读
+        // 论文 - 显示/隐藏左侧论文库
+        if(isMobile) {
+            left.classList.toggle('collapsed');
+            left.style.transform = left.classList.contains('collapsed') ? 'translateX(-100%)' : 'translateX(0)';
+            // 关闭右侧
+            right.classList.add('collapsed');
+            right.style.transform = 'translateX(100%)';
+        }
         switchMode('reading');
     } else if(tab === 2){
+        // 阅读
+        switchMode('reading');
+        if(isMobile) {
+            left.classList.add('collapsed');
+            right.classList.add('collapsed');
+            left.style.transform = 'translateX(-100%)';
+            right.style.transform = 'translateX(100%)';
+        }
+    } else if(tab === 3){
         // 分析
         switchMode('analysis');
-    } else if(tab === 3){
+        if(isMobile) {
+            left.classList.add('collapsed');
+            right.classList.add('collapsed');
+            left.style.transform = 'translateX(-100%)';
+            right.style.transform = 'translateX(100%)';
+        }
+    } else if(tab === 4){
         // 评审
         switchMode('peerReview');
-    } else if(tab === 4){
+        if(isMobile) {
+            left.classList.add('collapsed');
+            right.classList.add('collapsed');
+            left.style.transform = 'translateX(-100%)';
+            right.style.transform = 'translateX(100%)';
+        }
+    } else if(tab === 5){
         // 检索
         switchMode('semanticSearch');
-    } else if(tab === 5){
+        if(isMobile) {
+            left.classList.add('collapsed');
+            right.classList.add('collapsed');
+            left.style.transform = 'translateX(-100%)';
+            right.style.transform = 'translateX(100%)';
+        }
+    } else if(tab === 6){
         // 热点
         switchMode('hotPapers');
+        if(isMobile) {
+            left.classList.add('collapsed');
+            right.classList.add('collapsed');
+            left.style.transform = 'translateX(-100%)';
+            right.style.transform = 'translateX(100%)';
+        }
+    } else if(tab === 7){
+        // 对话 - 显示/隐藏右侧问答栏
+        if(isMobile) {
+            right.classList.toggle('collapsed');
+            right.style.transform = right.classList.contains('collapsed') ? 'translateX(100%)' : 'translateX(0)';
+            // 关闭左侧
+            left.classList.add('collapsed');
+            left.style.transform = 'translateX(-100%)';
+        }
     }
 }
 
