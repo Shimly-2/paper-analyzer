@@ -132,38 +132,6 @@ function fetchArxivPapers(category, maxResults) {
     });
 }
 
-// 从 PapersWithCode 获取 trending papers
-function fetchPapersWithCode(maxResults) {
-    return new Promise((resolve) => {
-        https.get('https://paperswithcode.com/api/v1/papers/?page=1&per_page=' + maxResults, (res) => {
-            let data = '';
-            res.on('data', c => data += c);
-            res.on('end', () => {
-                try {
-                    const json = JSON.parse(data);
-                    const papers = json.results || [];
-                    const results = papers.map(p => ({
-                        id: 'pwc_' + (p.id || ''),
-                        title: p.title || '',
-                        summary: p.abstract || '',
-                        authors: p.authors ? p.authors.map(a => a.name || a) : [],
-                        published: p.published || '',
-                        pdf: p.url_pdf || '',
-                        url: p.url || ''
-                    }));
-                    resolve(results);
-                } catch (e) {
-                    console.error('PapersWithCode API 失败:', e.message);
-                    resolve([]);
-                }
-            });
-        }).on('error', (e) => {
-            console.error('PapersWithCode 请求失败:', e.message);
-            resolve([]);
-        });
-    });
-}
-
 // 从 arXiv 获取每日最新论文（不限制领域）
 function fetchDailyPapers(maxResults) {
     return new Promise((resolve, reject) => {
@@ -908,64 +876,98 @@ const server = http.createServer((req, res) => {
                         const category = categoryMap[topic] || 'cs.LG';
                         try {
                             const papers = await fetchArxivPapers(category, 10);
-                            for (const p of papers) {
-                                // 检查是否已存在
-                                db.get('SELECT id FROM hot_papers WHERE arxiv_id = ? AND date = ?', [p.id, today], (err, existing) => {
-                                    if (!existing) {
-                                        const authors = p.authors ? p.authors.join(', ') : '';
-                                        db.run('INSERT INTO hot_papers (date, source, arxiv_id, title, abstract, authors, categories, topics, published_at, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
-                                            [today, 'arXiv', p.id, p.title, p.summary, authors, category, JSON.stringify([topic]), p.published, p.pdf], (err) => {
-                                                if (!err) addedCount++;
-                                            });
-                                    }
+                            
+                            // 使用 Promise 包装插入操作
+                            const insertPromises = papers.map(p => {
+                                return new Promise((resolve) => {
+                                    db.get('SELECT id FROM hot_papers WHERE arxiv_id = ? AND date = ?', [p.id, today], (err, existing) => {
+                                        if (!existing) {
+                                            const authors = p.authors ? p.authors.join(', ') : '';
+                                            db.run('INSERT INTO hot_papers (date, source, arxiv_id, title, abstract, authors, categories, topics, published_at, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                                                [today, 'arXiv', p.id, p.title, p.summary, authors, category, JSON.stringify([topic]), p.published, p.pdf], (err) => {
+                                                    if (!err) addedCount++;
+                                                    resolve();
+                                                });
+                                        } else {
+                                            resolve();
+                                        }
+                                    });
                                 });
-                            }
+                            });
+                            
+                            await Promise.all(insertPromises);
                         } catch(e) { console.error('arXiv抓取失败:', e); }
                     }
                     
-                    // 2. 从 PapersWithCode 获取 trending papers
-                    try {
-                        const pwcPapers = await fetchPapersWithCode(10);
-                        for (const p of pwcPapers) {
-                            // 提取 arxiv ID 如果有
-                            let arxivId = '';
-                            if (p.url && p.url.includes('arxiv.org/abs/')) {
-                                arxivId = p.url.split('arxiv.org/abs/')[1];
-                            }
-                            // 放宽检查：只要同一天没有完全相同的 title 就添加
-                            db.get('SELECT id FROM hot_papers WHERE title = ? AND date = ?', [p.title.substring(0, 100), today], (err, existing) => {
-                                if (!existing) {
-                                    const authors = p.authors ? p.authors.join(', ') : '';
-                                    db.run('INSERT INTO hot_papers (date, source, arxiv_id, title, abstract, authors, topics, published_at, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
-                                        [today, 'PapersWithCode', arxivId, p.title, p.summary, authors, JSON.stringify(topicNames), p.published, p.url || p.pdf], (err) => {
-                                            if (!err) addedCount++;
-                                        });
-                                }
-                            });
-                        }
-                    } catch(e) { console.error('PapersWithCode抓取失败:', e); }
-                    
-                    // 3. 从 DailyPaper (arXiv全类别) 获取每日最新论文
+                    // 2. 从 DailyPaper (arXiv全类别) 获取每日最新论文
                     try {
                         const dailyPapers = await fetchDailyPapers(15);
-                        for (const p of dailyPapers) {
-                            // 放宽检查：只要同一天没有完全相同的 title 就添加
-                            db.get('SELECT id FROM hot_papers WHERE title = ? AND date = ?', [p.title.substring(0, 100), today], (err, existing) => {
-                                if (!existing) {
-                                    const authors = p.authors ? p.authors.join(', ') : '';
-                                    db.run('INSERT INTO hot_papers (date, source, arxiv_id, title, abstract, authors, categories, topics, published_at, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
-                                        [today, 'DailyPaper', p.id, p.title, p.summary, authors, p.categories.join(','), JSON.stringify(topicNames), p.published, p.pdf], (err) => {
-                                            if (!err) addedCount++;
-                                        });
-                                }
+                        
+                        // 使用 Promise 包装插入操作，确保全部完成
+                        const insertPromises = dailyPapers.map(p => {
+                            return new Promise((resolve) => {
+                                // 更严格去重：检查 title 相同或 arxiv_id 相同
+                                const checkTitle = p.title.substring(0, 100);
+                                db.get('SELECT id FROM hot_papers WHERE (title = ? OR arxiv_id = ?) AND date = ?', [checkTitle, p.id, today], (err, existing) => {
+                                    if (!existing) {
+                                        const authors = p.authors ? p.authors.join(', ') : '';
+                                        db.run('INSERT INTO hot_papers (date, source, arxiv_id, title, abstract, authors, categories, topics, published_at, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                                            [today, 'DailyPaper', p.id, p.title, p.summary, authors, p.categories.join(','), JSON.stringify(topicNames), p.published, p.pdf], (err) => {
+                                                if (!err) addedCount++;
+                                                resolve();
+                                            });
+                                    } else {
+                                        resolve();
+                                    }
+                                });
                             });
-                        }
+                        });
+                        
+                        // 等待所有插入完成
+                        await Promise.all(insertPromises);
+                        
                     } catch(e) { console.error('DailyPaper抓取失败:', e); }
                     
-                    setTimeout(() => {
-                        res.writeHead(200, {'Content-Type':'application/json'});
-                        res.end(JSON.stringify({success:true, count:addedCount}));
-                    }, 4000);
+                    // 插入完成后，生成中文总结
+                    db.all('SELECT id, title, abstract FROM hot_papers WHERE date = ? AND (chinese_summary IS NULL OR chinese_summary = "")', [today], (err, papers) => {
+                        
+                        if (err || !papers || papers.length === 0) {
+                            res.writeHead(200, {'Content-Type':'application/json'});
+                            res.end(JSON.stringify({success:true, count:addedCount}));
+                            return;
+                        }
+                        
+                        // 构建 prompt
+                        let prompt = '请为以下论文生成一句话中文总结。按固定格式输出，每行格式为：###论文N### 总结内容\n\n';
+                        papers.forEach((p, i) => {
+                            const abstract = p.abstract ? p.abstract.substring(0, 2000) : '';
+                            prompt += `###论文${i+1}###\n标题: ${p.title}\n摘要: ${abstract}\n\n`;
+                        });
+                        
+                        // 调用 MiniMax API
+                        callMiniMax(prompt, '你是一个专业的AI学术论文总结助手。为每篇论文生成一句简洁的中文总结，突出论文的核心贡献或创新点。输出格式：每行以"###论文N###"开头，后面直接跟总结内容。', (result) => {
+                            if (result.text) {
+                                // 解析结果并更新数据库
+                                const lines = result.text.split('\n');
+                                let updateCount = 0;
+                                lines.forEach((line, i) => {
+                                    const match = line.match(/###论文(\d+)###\s*(.+)/);
+                                    if (match) {
+                                        const idx = parseInt(match[1]) - 1;
+                                        const summary = match[2].trim();
+                                        if (papers[idx] && summary) {
+                                            db.run('UPDATE hot_papers SET chinese_summary = ? WHERE id = ?', [summary, papers[idx].id], (err) => {
+                                                if (!err) updateCount++;
+                                            });
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            res.writeHead(200, {'Content-Type':'application/json'});
+                            res.end(JSON.stringify({success:true, count:addedCount}));
+                        });
+                    });
                 });
             } catch(e) { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:e.message})); }
         });

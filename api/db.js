@@ -129,6 +129,7 @@ db.serialize(() => {
       arxiv_id TEXT,
       title TEXT,
       abstract TEXT,
+      chinese_summary TEXT,
       authors TEXT,
       categories TEXT,
       topics TEXT,
@@ -138,6 +139,11 @@ db.serialize(() => {
     )
   `, (err) => {
     if (err) console.error('创建hot_papers表失败:', err);
+  });
+  
+  // 检查并添加缺失的字段
+  db.run('ALTER TABLE hot_papers ADD COLUMN chinese_summary TEXT', (err) => {
+    // 忽略错误（字段可能已存在）
   });
   
   // 检查并迁移旧数据

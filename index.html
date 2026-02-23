@@ -1360,6 +1360,9 @@ function loadHotPapers() {
                     html += '<span style="font-size:11px;color:var(--text-muted)">' + p.date + '</span>';
                     html += '</div>';
                     html += '<h3 style="margin:8px 0;font-size:14px;font-weight:600">' + (p.title || '无标题') + '</h3>';
+                    if(p.chinese_summary) {
+                        html += '<p style="font-size:13px;color:#10b981;margin:8px 0;font-weight:500;background:rgba(16,185,129,0.1);padding:8px;border-radius:4px;border-left:3px solid #10b981">' + p.chinese_summary + '</p>';
+                    }
                     html += '<p style="font-size:12px;color:var(--text-muted);margin:8px 0">' + (p.authors || '') + '</p>';
                     if(topics) html += '<p style="font-size:11px;color:var(--accent);margin:8px 0">话题: ' + topics + '</p>';
                     html += '<p style="font-size:12px;color:var(--text-secondary);margin:8px 0">' + (p.abstract || '') + '</p>';
@@ -1381,8 +1384,11 @@ function fetchHotPapers() {
         .then(function(r){return r.json();})
         .then(function(d){
             if(d.success) {
-                document.getElementById('hotPapersStats').innerHTML = '抓取完成，新增 ' + (d.count || 0) + ' 篇论文';
-                loadHotPapers();
+                document.getElementById('hotPapersStats').innerHTML = '正在生成AI摘要...';
+                // 等待足够时间让AI生成完成
+                setTimeout(function(){
+                    loadHotPapers();
+                }, 12000);
             } else {
                 alert('抓取失败: ' + (d.error || '未知错误'));
             }
