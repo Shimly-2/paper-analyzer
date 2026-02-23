@@ -150,8 +150,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .sidebar-left{position:fixed;top:52px;left:0;bottom:60px;width:280px;z-index:50;transform:translateX(-100%);transition:transform .3s}
 .sidebar-left.show{transform:translateX(0)}
 .sidebar-left.collapsed{transform:translateX(-100%);width:280px}
-.toggle-left{display:block;left:280px}
-.toggle-right{display:block;right:280px}
+.toggle-left{display:block;left:0}
+.toggle-right{display:block;right:0}
 .reading-container{grid-template-columns:1fr;gap:12px;padding:12px}
 .reading-pane{min-height:300px}
 .pane-content{padding:12px;font-size:13px}
@@ -360,8 +360,8 @@ function importPaper() {
 <div id="semanticSearchMode" style="display:none">
 <div style="padding:20px">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-        <input type="text" id="searchInput" placeholder="输入关键词搜索相关论文..." style="flex:1;padding:10px 16px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);font-size:14px">
-        <select id="sortBy" style="padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);font-size:14px">
+        <input type="text" id="searchInput" placeholder="输入关键词搜索相关论文..." style="flex:1;padding:10px 16px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);font-size:16px">
+        <select id="sortBy" style="padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);font-size:16px">
             <option value="citationCount">引用量</option>
             <option value="year">发表年份</option>
             <option value="relevance">相似度</option>
@@ -379,7 +379,7 @@ function importPaper() {
 <div style="padding:20px">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
         <button class="paper-action2" onclick="fetchHotPapers()">刷新热点</button>
-        <select id="hotDateSelect" onchange="loadHotPapers()" style="padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);font-size:14px">
+        <select id="hotDateSelect" onchange="loadHotPapers()" style="padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);font-size:16px">
             <option value="">选择日期</option>
         </select>
     </div>
@@ -1799,7 +1799,7 @@ window.addEventListener('resize', function() {
         // 侧栏默认隐藏
         left.style.transform = 'translateX(-100%)';
         right.style.transform = 'translateX(100%)';
-        // toggle按钮初始位置（隐藏状态）
+        // toggle按钮初始位置（在侧栏内侧边缘）
         tl.style.transform = 'translateX(0)';
         tr.style.transform = 'translateX(0)';
     }
