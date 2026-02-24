@@ -609,9 +609,10 @@ const server = http.createServer((req, res) => {
 6. 表格：<table border="1" style="border-collapse:collapse;width:100%;margin:12px 0;background:#2d2d2d;color:#f8f8f2;border-radius:8px"><tr style="background:#1a1a1a"><td style="padding:12px;border:1px solid #444;font-weight:bold">表头</td></tr><tr><td style="padding:12px;border:1px solid #444">内容</td></tr></table>
 7. 段落：<p style="margin:12px 0;line-height:1.8">文字</p>
 8. 列表：<ul><li>项目</li></ul>
-9. 标题：<h1 style="font-size:24px;margin:16px 0">、<h2 style="font-size:20px;margin:14px 0">、<h3 style="font-size:16px;margin:12px 0">
+9. 标题：<h1 style="font-size:24px;margin:16px 0">、<h2 style="font-size:20px;margin:14px 0;color: #BB86FC">、<h3 style="font-size:16px;margin:12px 0;color: #03DAC6">
 10. 图片：<p style="text-align:center"><img src="URL" style="max-width:100%"></p>
 11. 代码块（bash/命令行）：<pre style="background:#2d2d2d;color:#f8f8f2;padding:16px;border-radius:8px;overflow-x:auto;line-height:1.5;font-family:monospace">代码</pre>
+12. 章标题（一级标题）字体用紫色( #BB86FC)，节标题（二级标题）字体用绿色( #03DAC6)
 
 **禁止：**
 - flex、grid、float
@@ -621,7 +622,7 @@ const server = http.createServer((req, res) => {
 **标准输出格式：**
 <h1 style="font-size:24px;margin:16px 0;font-weight:bold">论文标题</h1>
 <p style="margin:12px 0;line-height:1.8">段落内容</p>
-<h2 style="font-size:20px;margin:14px 0;font-weight:bold">章节标题</h2>
+<h2 style="font-size:20px;margin:14px 0;font-weight:bold;color: #BB86FC">章节标题</h2>
 <div style="text-align:center;margin:16px 0">$$公式$$</div>
 <p style="text-align:center"><img src="/api/images/xxx.jpg" style="max-width:100%"></p>
 <table style="width:100%;border-collapse:collapse;margin:12px 0"><tr><td style="padding:8px;border:1px solid #ddd">内容</td></tr></table>

@@ -796,7 +796,7 @@ function updateProcessStatus() {
     var btn = document.getElementById('oneClickBtn');
     
     // 解析状态
-    if (currentPaper.parsed) {
+    if (currentPaper.original) {
         dotParse.className = 'process-dot completed';
         statusParse.className = 'process-status-item completed';
         statusParse.textContent = '已完成';
@@ -878,14 +878,27 @@ function updateProcessStatus() {
 
 // 一键生成
 async function oneClickGenerate() {
-    if (!currentPaper || !currentPaper.original) {
-        alert('请先解析论文原文');
-        return;
-    }
+    if (!currentPaper) return;
     
     var btn = document.getElementById('oneClickBtn');
     btn.disabled = true;
     btn.textContent = '生成中...';
+    
+    // 解析 - 如果没有原文，先解析
+    if (!currentPaper.original) {
+        dotParse.classList.add('processing');
+        statusParse.textContent = '进行中...';
+        
+        var parseBtn = document.getElementById('parseBtn');
+        parseBtn.click();
+        
+        // 等待解析完成
+        while (!currentPaper.original) {
+            await new Promise(function(resolve) { setTimeout(resolve, 500); });
+        }
+        // 更新解析状态为完成
+        updateProcessStatus();
+    }
     
     // 翻译
     if (!currentPaper.translated) {
@@ -896,7 +909,10 @@ async function oneClickGenerate() {
         var translateBtn = document.getElementById('translateBtn');
         translateBtn.click();
         
-        await new Promise(function(resolve) { setTimeout(resolve, 1000); });
+        // 等待翻译完成
+        while (!currentPaper.translated) {
+            await new Promise(function(resolve) { setTimeout(resolve, 500); });
+        }
     }
     
     // 分析
@@ -908,7 +924,10 @@ async function oneClickGenerate() {
         var analyzeBtn = document.getElementById('analyzeBtn');
         analyzeBtn.click();
         
-        await new Promise(function(resolve) { setTimeout(resolve, 1000); });
+        // 等待分析完成
+        while (!currentPaper.analysis) {
+            await new Promise(function(resolve) { setTimeout(resolve, 500); });
+        }
     }
     
     // 评审
@@ -918,6 +937,11 @@ async function oneClickGenerate() {
         
         var peerReviewBtn = document.getElementById('peerReviewBtn');
         peerReviewBtn.click();
+        
+        // 等待评审完成
+        while (!currentPaper.peerReview) {
+            await new Promise(function(resolve) { setTimeout(resolve, 500); });
+        }
     }
 }
 
@@ -1559,7 +1583,7 @@ function generatePeerReview() {
             fetch(apiUrl + '/api/convert', {
                 method:'POST',
                 headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({markdown: d.text, title: '同行评审', uuid: currentPaper.uuid})
+                body:JSON.stringify({markdown: d.text, title: '同行评审', uuid: currentPaper.uuid, prompt: '一级标题字体用紫色(#BB86FC)，二级标题字体用绿色(#03DAC6)'})
             })
             .then(function(r2){return r2.json();})
             .then(function(d2){
@@ -1878,7 +1902,7 @@ function generateAnalysis() {
             fetch(apiUrl + '/api/convert', {
                 method:'POST',
                 headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({markdown: d.text, title: '分析报告', uuid: currentPaper.uuid})
+                body:JSON.stringify({markdown: d.text, title: '分析报告', uuid: currentPaper.uuid, prompt: '一级标题字体用紫色(#BB86FC)，二级标题字体用绿色(#03DAC6)'})
             })
             .then(function(r2){return r2.json();})
             .then(function(d2){
