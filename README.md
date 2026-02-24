@@ -54,7 +54,7 @@ node api/server.js
 ss -tlnp | grep 5001
 ```
 
-### 使用 Tunnel 公开访问
+### 使用 Tunnel 公开访问 no root
 
 #### 方式 1：ngrok（推荐）
 
@@ -78,7 +78,7 @@ wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloud
 chmod +x cloudflared
 
 # 启动 tunnel
-./cloudflared tunnel --url http://localhost:5001
+cloudflared tunnel --url http://localhost:5001
 
 # 获得公开 URL，格式如：
 # https://xxxx.trycloudflare.com
