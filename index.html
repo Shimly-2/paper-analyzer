@@ -908,12 +908,9 @@ async function oneClickGenerate() {
         
         var translateBtn = document.getElementById('translateBtn');
         translateBtn.click();
-        
-        // 等待翻译完成
-        while (!currentPaper.translated) {
-            await new Promise(function(resolve) { setTimeout(resolve, 500); });
-        }
     }
+    
+    await new Promise(function(resolve) { setTimeout(resolve, 2000); });
     
     // 分析
     if (!currentPaper.analysis) {
@@ -923,12 +920,9 @@ async function oneClickGenerate() {
         
         var analyzeBtn = document.getElementById('analyzeBtn');
         analyzeBtn.click();
-        
-        // 等待分析完成
-        while (!currentPaper.analysis) {
-            await new Promise(function(resolve) { setTimeout(resolve, 500); });
-        }
     }
+    
+    await new Promise(function(resolve) { setTimeout(resolve, 2000); });
     
     // 评审
     if (!currentPaper.peerReview) {
@@ -937,11 +931,6 @@ async function oneClickGenerate() {
         
         var peerReviewBtn = document.getElementById('peerReviewBtn');
         peerReviewBtn.click();
-        
-        // 等待评审完成
-        while (!currentPaper.peerReview) {
-            await new Promise(function(resolve) { setTimeout(resolve, 500); });
-        }
     }
 }
 
