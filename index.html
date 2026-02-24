@@ -948,6 +948,9 @@ function renderKaTeX() {
 
 function parsePaper() {
     if (!currentPaper) return;
+    if (currentPaper.original) {
+        if (!confirm('已经有解析后的原文，是否重新解析？')) return;
+    }
     var btn = document.getElementById('parseBtn');
     btn.innerHTML = '<span class="loading"></span> 解析中...';
     document.getElementById('originalContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在解析论文，请稍候...</p>';
@@ -985,6 +988,7 @@ function parsePaper() {
                         document.getElementById('originalContent').innerHTML = content;
                         renderKaTeX();
                         document.getElementById('analysisTitle').innerHTML = currentPaper.title;
+                        updateProcessStatus();
                     } else {
                         alert('格式转换失败: ' + (d2.error || '未知错误'));
                     }
@@ -1039,6 +1043,7 @@ function parsePaper() {
                     document.getElementById('originalContent').innerHTML = content;
                     renderKaTeX();
                     document.getElementById('analysisTitle').innerHTML = currentPaper.title;
+                    updateProcessStatus();
                 } else {
                     alert('格式转换失败: ' + (d.error || '未知错误'));
                     document.getElementById('originalContent').innerHTML = '<p style="color:var(--text-muted)">格式转换失败</p>';
@@ -1077,6 +1082,9 @@ function convertMarkdownToHtml(markdown) {
 
 function translatePaper() {
     if (!currentPaper || !currentPaper.parsed) { alert('请先解析论文'); return; }
+    if (currentPaper.translated) {
+        if (!confirm('已经有翻译后的译文，是否重新翻译？')) return;
+    }
     var btn = document.getElementById('translateBtn');
     btn.innerHTML = '<span class="loading"></span> 翻译中...';
     document.getElementById('translatedContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在翻译论文，请稍候...</p>';
@@ -1554,6 +1562,9 @@ function mobileNav(tab){
 
 function generatePeerReview() {
     if (!currentPaper || !currentPaper.parsed) { alert('请先解析论文'); return; }
+    if (currentPaper.peerReview) {
+        if (!confirm('已经有同行评审，是否重新评审？')) return;
+    }
     var btn = document.getElementById('peerReviewBtn');
     btn.innerHTML = '<span class="loading"></span> 评审中...';
     btn.disabled = true;
@@ -1871,6 +1882,9 @@ function doImport(papersList, arxivId, paperTitle) {
 
 function generateAnalysis() {
     if (!currentPaper || !currentPaper.parsed) { alert('请先解析论文'); return; }
+    if (currentPaper.analysis) {
+        if (!confirm('已经有分析报告，是否重新分析？')) return;
+    }
     var btn = document.getElementById('analyzeBtn');
     btn.innerHTML = '<span class="loading"></span> 分析中...';
     btn.disabled = true;
