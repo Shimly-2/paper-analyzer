@@ -174,6 +174,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 
 .paper-action2{background:linear-gradient(135deg,#9B7ED9,#7B5DB8);color:#fff;border:none;padding:10px 24px;border-radius:20px;cursor:pointer;font-size:14px;font-weight:500;transition:all 0.3s;box-shadow:0 2px 8px rgba(155,126,217,0.3)}
 .paper-action2:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(155,126,217,0.5)}
+
+.process-flow{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color)}
+.process-steps{display:flex;align-items:center;gap:8px}
+.process-step{display:flex;flex-direction:column;align-items:center;gap:4px}
+.process-dot{width:12px;height:12px;border-radius:50%;background:var(--border-color)}
+.process-dot.completed{background:var(--green)}
+.process-dot.processing{background:var(--orange);animation:pulse 1s infinite}
+.process-line{width:30px;height:2px;background:var(--border-color)}
+.process-line.completed{background:var(--green)}
+.process-line.processing{background:var(--orange)}
+.process-label{font-size:10px;color:var(--text-muted)}
+.process-label.completed{color:var(--green)}
+.process-label.processing{color:var(--orange)}
+.one-click-btn{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px}
+.one-click-btn:disabled{opacity:0.6;cursor:not-allowed}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
 </style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js">
@@ -327,7 +344,33 @@ function importPaper() {
 </aside>
 <button class="toggle-btn toggle-left" id="toggleLeft" onclick="toggleSidebar('left')">&#8249;</button>
 <main class="main-content">
-<div class="mode-tabs"><button class="mode-tab active" onclick="switchMode('reading')">阅读模式</button><button class="mode-tab" onclick="switchMode('analysis')">分析报告</button><button class="mode-tab" onclick="switchMode('peerReview')">同行评审</button><button class="mode-tab" onclick="switchMode('semanticSearch')">语义检索</button><button class="mode-tab" onclick="switchMode('hotPapers')">热点推荐</button></div>
+<div class="mode-tabs"><button class="mode-tab active" onclick="switchMode('reading')">阅读模式</button>
+
+<div class="process-flow">
+    <div class="process-steps">
+        <div class="process-step">
+            <span class="process-dot" id="dotParse"></span>
+            <span class="process-label" id="labelParse">解析</span>
+        </div>
+        <span class="process-line" id="line1"></span>
+        <div class="process-step">
+            <span class="process-dot" id="dotTranslate"></span>
+            <span class="process-label" id="labelTranslate">翻译</span>
+        </div>
+        <span class="process-line" id="line2"></span>
+        <div class="process-step">
+            <span class="process-dot" id="dotAnalysis"></span>
+            <span class="process-label" id="labelAnalysis">分析</span>
+        </div>
+        <span class="process-line" id="line3"></span>
+        <div class="process-step">
+            <span class="process-dot" id="dotReview"></span>
+            <span class="process-label" id="labelReview">评审</span>
+        </div>
+    </div>
+    <button class="one-click-btn" id="oneClickBtn" onclick="oneClickGenerate()">一键生成</button>
+</div>
+<button class="mode-tab" onclick="switchMode('analysis')">分析报告</button><button class="mode-tab" onclick="switchMode('peerReview')">同行评审</button><button class="mode-tab" onclick="switchMode('semanticSearch')">语义检索</button><button class="mode-tab" onclick="switchMode('hotPapers')">热点推荐</button></div>
 <div class="main-scroll">
 <div id="readingMode">
 <div class="reading-container">
@@ -712,6 +755,142 @@ function updateContent() {
     
     // 渲染 KaTeX 公式
     renderKaTeX();
+    updateProcessStatus();
+}
+
+// 更新流程状态
+function updateProcessStatus() {
+    if (!currentPaper) return;
+    
+    var dotParse = document.getElementById('dotParse');
+    var dotTranslate = document.getElementById('dotTranslate');
+    var dotAnalysis = document.getElementById('dotAnalysis');
+    var dotReview = document.getElementById('dotReview');
+    var labelParse = document.getElementById('labelParse');
+    var labelTranslate = document.getElementById('labelTranslate');
+    var labelAnalysis = document.getElementById('labelAnalysis');
+    var labelReview = document.getElementById('labelReview');
+    var line1 = document.getElementById('line1');
+    var line2 = document.getElementById('line2');
+    var line3 = document.getElementById('line3');
+    var btn = document.getElementById('oneClickBtn');
+    
+    // 解析状态
+    if (currentPaper.parsed) {
+        dotParse.className = 'process-dot completed';
+        labelParse.className = 'process-label completed';
+        labelParse.textContent = '已完成';
+        line1.className = 'process-line completed';
+    } else {
+        dotParse.className = 'process-dot';
+        labelParse.className = 'process-label';
+        labelParse.textContent = '解析';
+        line1.className = 'process-line';
+    }
+    
+    // 翻译状态
+    if (currentPaper.translated) {
+        dotTranslate.className = 'process-dot completed';
+        labelTranslate.className = 'process-label completed';
+        labelTranslate.textContent = '已完成';
+        line2.className = 'process-line completed';
+    } else if (dotTranslate.classList.contains('processing')) {
+        dotTranslate.className = 'process-dot processing';
+        labelTranslate.className = 'process-label processing';
+        labelTranslate.textContent = '进行中...';
+    } else {
+        dotTranslate.className = 'process-dot';
+        labelTranslate.className = 'process-label';
+        labelTranslate.textContent = '等待中';
+        line2.className = 'process-line';
+    }
+    
+    // 分析状态
+    if (currentPaper.analysis) {
+        dotAnalysis.className = 'process-dot completed';
+        labelAnalysis.className = 'process-label completed';
+        labelAnalysis.textContent = '已完成';
+        line3.className = 'process-line completed';
+    } else if (dotAnalysis.classList.contains('processing')) {
+        dotAnalysis.className = 'process-dot processing';
+        labelAnalysis.className = 'process-label processing';
+        labelAnalysis.textContent = '进行中...';
+    } else {
+        dotAnalysis.className = 'process-dot';
+        labelAnalysis.className = 'process-label';
+        labelAnalysis.textContent = '等待中';
+        line3.className = 'process-line';
+    }
+    
+    // 评审状态
+    if (currentPaper.peerReview) {
+        dotReview.className = 'process-dot completed';
+        labelReview.className = 'process-label completed';
+        labelReview.textContent = '已完成';
+    } else if (dotReview.classList.contains('processing')) {
+        dotReview.className = 'process-dot processing';
+        labelReview.className = 'process-label processing';
+        labelReview.textContent = '进行中...';
+    } else {
+        dotReview.className = 'process-dot';
+        labelReview.className = 'process-label';
+        labelReview.textContent = '等待中';
+    }
+    
+    // 更新一键生成按钮状态
+    if (btn) {
+        btn.disabled = !currentPaper.parsed || (currentPaper.translated && currentPaper.analysis && currentPaper.peerReview);
+        if (currentPaper.translated && currentPaper.analysis && currentPaper.peerReview) {
+            btn.textContent = '✅ 全部完成';
+        } else {
+            btn.textContent = '一键生成';
+        }
+    }
+}
+
+// 一键生成
+async function oneClickGenerate() {
+    if (!currentPaper || !currentPaper.parsed) {
+        alert('请先解析论文');
+        return;
+    }
+    
+    var btn = document.getElementById('oneClickBtn');
+    btn.disabled = true;
+    btn.textContent = '生成中...';
+    
+    // 翻译
+    if (!currentPaper.translated) {
+        dotTranslate.classList.add('processing');
+        labelTranslate.textContent = '进行中...';
+        line2.className = 'process-line processing';
+        
+        var translateBtn = document.getElementById('translateBtn');
+        translateBtn.click();
+        
+        await new Promise(function(resolve) { setTimeout(resolve, 1000); });
+    }
+    
+    // 分析
+    if (!currentPaper.analysis) {
+        dotAnalysis.classList.add('processing');
+        labelAnalysis.textContent = '进行中...';
+        line3.className = 'process-line processing';
+        
+        var analyzeBtn = document.getElementById('analyzeBtn');
+        analyzeBtn.click();
+        
+        await new Promise(function(resolve) { setTimeout(resolve, 1000); });
+    }
+    
+    // 评审
+    if (!currentPaper.peerReview) {
+        dotReview.classList.add('processing');
+        labelReview.textContent = '进行中...';
+        
+        var peerReviewBtn = document.getElementById('peerReviewBtn');
+        peerReviewBtn.click();
+    }
 }
 
 function renderKaTeX() {
@@ -881,6 +1060,7 @@ function translatePaper() {
             var translated = d.text.replace(/\/api\/images\//g, apiUrl + '/api/images/');
             document.getElementById('translatedContent').innerHTML = translated;
             renderKaTeX();
+            updateProcessStatus();
         } else {
             alert('翻译失败: ' + (d.error || '未知错误'));
             document.getElementById('translatedContent').innerHTML = '<p style="color:var(--text-muted)">翻译失败</p>';
@@ -1360,10 +1540,12 @@ function generatePeerReview() {
                     savePapers();
                     document.getElementById('peerReviewContent').innerHTML = '<div class="analysis-section">'+d2.text+'</div>';
                     renderKaTeX();
+                    updateProcessStatus();
                 } else {
                     currentPaper.peerReview = d.text;
                     savePapers();
                     document.getElementById('peerReviewContent').innerHTML = '<div class="analysis-section">'+d.text+'</div>';
+                    updateProcessStatus();
                 }
                 btn.innerHTML = '生成同行评审'; btn.disabled = false;
             })
@@ -1677,8 +1859,12 @@ function generateAnalysis() {
                     renderKaTeX();
                     currentPaper.analysis = d2.text;
                     savePapers();
+                    updateProcessStatus();
                 } else {
                     document.getElementById('analysisContent').innerHTML = '<div class="analysis-section">'+d.text+'</div>';
+                    currentPaper.analysis = d.text;
+                    savePapers();
+                    updateProcessStatus();
                 }
                 btn.innerHTML = '生成分析报告'; btn.disabled = false;
             })
