@@ -666,36 +666,48 @@ function selectPaper(id) {
 function updateContent() {
     if (!currentPaper) {
         document.getElementById("originalContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">请先添加论文并解析</p>';
+        document.getElementById("translatedContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"翻译"获取中文翻译</p>';
         document.getElementById("analysisTitle").innerHTML = '';
+        document.getElementById("analysisContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">暂无分析报告</p>';
+        document.getElementById("peerReviewContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">暂无同行评审</p>';
         return;
     }
-    if (currentPaper.parsed && currentPaper.original) {
-        var apiUrl = null || 'https://paper-analyzer-backend.top';
-        var content = currentPaper.original.replace(/\/api\/images\//g, apiUrl + '/api/images/');
-        document.getElementById("originalContent").innerHTML = content;
-        renderKaTeX();
-        if (currentPaper.translated) {
-            var translated = currentPaper.translated.replace(/\/api\/images\//g, apiUrl + '/api/images/');
-            document.getElementById("translatedContent").innerHTML = translated;
-        renderKaTeX();
-        } else {
-            document.getElementById("translatedContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"翻译"获取中文翻译</p>';
-        }
-    } else {
-        document.getElementById("originalContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">请点击"解析"按钮解析论文</p>';
-    }
+    // 更新标题和元信息
     document.getElementById("analysisTitle").innerHTML = currentPaper.title;
     document.getElementById("analysisMeta").innerHTML = currentPaper.arxiv ? 'arXiv: ' + currentPaper.arxiv + ' | ' + currentPaper.date : currentPaper.date;
     document.getElementById("peerReviewTitle").innerHTML = currentPaper.title || '';
     document.getElementById("peerReviewMeta").innerHTML = currentPaper.arxiv ? 'arXiv: ' + currentPaper.arxiv + ' | ' + currentPaper.date : (currentPaper.date || '');
     
-    // Display saved analysis
+    // 显示原文
+    if (currentPaper.parsed && currentPaper.original) {
+        var apiUrl = null || 'https://paper-analyzer-backend.top';
+        var content = currentPaper.original.replace(/\/api\/images\//g, apiUrl + '/api/images/');
+        document.getElementById("originalContent").innerHTML = content;
+    } else {
+        document.getElementById("originalContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">请点击"解析"按钮解析论文</p>';
+    }
+    
+    // 显示译文
+    if (currentPaper.translated) {
+        var apiUrl = null || 'https://paper-analyzer-backend.top';
+        var translated = currentPaper.translated.replace(/\/api\/images\//g, apiUrl + '/api/images/');
+        document.getElementById("translatedContent").innerHTML = translated;
+    } else {
+        document.getElementById("translatedContent").innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"翻译"获取中文翻译</p>';
+    }
+    
+    // 显示分析报告
     if (currentPaper.analysis) {
         document.getElementById('analysisContent').innerHTML = '<div class="analysis-section">' + currentPaper.analysis + '</div>';
+    } else {
+        document.getElementById('analysisContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">暂无分析报告</p>';
     }
-    // Display saved peer review
+    
+    // 显示同行评审
     if (currentPaper.peerReview) {
         document.getElementById('peerReviewContent').innerHTML = '<div class="analysis-section">' + currentPaper.peerReview + '</div>';
+    } else {
+        document.getElementById('peerReviewContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">暂无同行评审</p>';
     }
     
     // 渲染 KaTeX 公式
