@@ -1787,7 +1787,7 @@ function doSemanticSearch() {
                     '<div style="font-size:14px;font-weight:600;margin-bottom:8px">'+p.title+'</div>' +
                     chineseSummaryHtml +
                     '<div style="font-size:13px;color:var(--text-muted)">'+(p.year||'')+' | '+(p.citationCount||0)+' citations'+(sim ? ' | 相似度: '+sim : '')+'</div>' +
-                    '<div style="font-size:13px;color:var(--text-secondary);margin-top:8px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">'+(p.abstract||'')+'</div>' +
+                    '<div style="font-size:13px;color:var(--text-secondary);margin-top:8px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-box-orient:vertical">'+(p.abstract||'')+'</div>' +
                     '<button style="margin-top:8px;padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:4px;margin-right:0;cursor:pointer;font-size:12px" onclick="event.stopPropagation();importSearchPaper(\''+p.paperId+'\',\''+encodeURIComponent(p.title)+'\')">导入论文库</button>' +
                     '</div>';
             }).join('');
