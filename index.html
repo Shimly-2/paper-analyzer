@@ -12,7 +12,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 ::-webkit-scrollbar-track{background:var(--bg-secondary)}
 ::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:3px}
 .top-nav{position:fixed;top:0;left:0;right:0;height:52px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:100}
-.nav-left{display:flex;align-items:center;gap:16px}
+.nav-left{display:flex;align-items:center;gap:24px}
 .nav-logo{font-size:16px;font-weight:700;color:var(--accent)}
 .nav-tabs{display:flex;gap:4px}
 .nav-tab{padding:8px 16px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-radius:6px;border:none;background:transparent}
@@ -73,7 +73,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .section-list{list-style:none}
 .section-list li{font-size:13px;color:var(--text-secondary);margin-bottom:8px;padding-left:16px;position:relative}
 .section-list li::before{content:"•";position:absolute;left:0;color:var(--accent)}
-.dimension-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}
+.dimension-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:20px}
 .dimension-card{border-radius:12px;padding:16px;min-height:180px}
 .dimension-card.blue{background:linear-gradient(135deg,#1a3a5c,#0d1f33);border:1px solid #2a5a8c}
 .dimension-card.orange{background:linear-gradient(135deg,#4a3520,#2d1f14);border:1px solid #8a5a30}
@@ -175,21 +175,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .paper-action2{background:linear-gradient(135deg,#9B7ED9,#7B5DB8);color:#fff;border:none;padding:10px 24px;border-radius:20px;cursor:pointer;font-size:14px;font-weight:500;transition:all 0.3s;box-shadow:0 2px 8px rgba(155,126,217,0.3)}
 .paper-action2:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(155,126,217,0.5)}
 
-.process-flow{display:flex;align-items:center;gap:16px;padding:8px 16px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color)}
-.process-status{display:flex;align-items:center;gap:8px;margin-bottom:0}
-.process-status-item{font-size:10px;min-width:50px;text-align:center}
+.process-flow{display:inline-flex;flex-direction:column;align-items:center;gap:2px;padding:8px 24px;background:var(--bg-tertiary);border-radius:6px;margin-left:12px}
+.process-status{display:flex;align-items:center;gap:24px}
+.process-status-item{font-size:10px;min-width:38px;text-align:center}
 .process-status-item.completed{color:var(--green)}
 .process-status-item.processing{color:var(--orange)}
 .process-status-item.pending{color:var(--text-muted)}
 .process-steps{display:flex;align-items:center;gap:0}
 .process-step{display:flex;flex-direction:column;align-items:center}
-.process-dot{width:10px;height:10px;border-radius:50%;background:var(--border-color);margin-bottom:2px}
+.process-dot{width:8px;height:8px;border-radius:50%;background:var(--border-color)}
 .process-dot.completed{background:var(--green)}
 .process-dot.processing{background:var(--orange);animation:pulse 1s infinite}
-.process-line{width:25px;height:2px;background:var(--border-color)}
+.process-line{width:45px;height:2px;background:var(--border-color)}
 .process-line.completed{background:var(--green)}
 .process-line.processing{background:var(--orange)}
-.process-label{font-size:9px;color:var(--text-muted)}
+.process-label{font-size:8px;color:var(--text-muted);margin-top:2px}
+.one-click-btn{background:var(--accent);color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:11px;margin-left:8px}
+.one-click-btn:disabled{opacity:0.6;cursor:not-allowed}
 .one-click-btn{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px}
 .one-click-btn:disabled{opacity:0.6;cursor:not-allowed}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
@@ -353,7 +355,6 @@ function importPaper() {
 <button class="mode-tab" onclick="switchMode('peerReview')">同行评审</button>
 <button class="mode-tab" onclick="switchMode('semanticSearch')">语义检索</button>
 <button class="mode-tab" onclick="switchMode('hotPapers')">热点推荐</button>
-</div>
 <div class="process-flow">
     <div class="process-status">
         <span class="process-status-item" id="statusParse">已完成</span>
@@ -382,7 +383,8 @@ function importPaper() {
             <span class="process-label">评审</span>
         </div>
     </div>
-    <button class="one-click-btn" id="oneClickBtn" onclick="oneClickGenerate()">一键生成</button>
+</div>
+<button class="one-click-btn" id="oneClickBtn" onclick="oneClickGenerate()">一键生成</button>
 </div>
 <div class="main-scroll">
 <div id="readingMode">
