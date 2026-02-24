@@ -175,7 +175,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .paper-action2{background:linear-gradient(135deg,#9B7ED9,#7B5DB8);color:#fff;border:none;padding:10px 24px;border-radius:20px;cursor:pointer;font-size:14px;font-weight:500;transition:all 0.3s;box-shadow:0 2px 8px rgba(155,126,217,0.3)}
 .paper-action2:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(155,126,217,0.5)}
 
-.process-flow{display:inline-flex;flex-direction:column;align-items:center;gap:2px;padding:8px 24px;background:var(--bg-tertiary);border-radius:6px;margin-right:0;margin-left:auto}
+.process-flow{display:inline-flex;flex-direction:column;align-items:center;gap:0;padding:2px 17px;background:var(--bg-tertiary);border-radius:6px;margin-right:0;margin-left:auto}
 .process-status{display:flex;align-items:center;gap:24px}
 .process-status-item{font-size:10px;min-width:38px;text-align:center}
 .process-status-item.completed{color:var(--green)}
@@ -186,10 +186,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .process-dot{width:8px;height:8px;border-radius:50%;background:var(--border-color)}
 .process-dot.completed{background:var(--green)}
 .process-dot.processing{background:var(--orange);animation:pulse 1s infinite}
-.process-line{width:45px;height:2px;background:var(--border-color)}
+.process-line{width:42px;height:2px;margin-bottom:15px;background:var(--border-color)}
 .process-line.completed{background:var(--green)}
 .process-line.processing{background:var(--orange)}
-.process-label{font-size:8px;color:var(--text-muted);margin-top:2px}
+.process-label{font-size:10px;color:var(--text-muted);margin-top:2px}
 .one-click-btn{background:var(--accent);color:#fff;border:none;padding:6px 12px;border-radius:4px;margin-right:0;cursor:pointer;font-size:11px;margin-left:8px}
 .one-click-btn:disabled{opacity:0.6;cursor:not-allowed}
 .one-click-btn{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px}
@@ -856,7 +856,7 @@ function updateProcessStatus() {
     if (btn) {
         btn.disabled = !currentPaper.parsed || (currentPaper.translated && currentPaper.analysis && currentPaper.peerReview);
         if (currentPaper.translated && currentPaper.analysis && currentPaper.peerReview) {
-            btn.textContent = '✅ 完成';
+            btn.textContent = '全部完成';
         } else {
             btn.textContent = '一键生成';
         }
