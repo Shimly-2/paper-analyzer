@@ -18,7 +18,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .nav-tab{padding:8px 16px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-radius:6px;border:none;background:transparent}
 .nav-tab.active{background:var(--accent);color:white}
 .nav-right{display:flex;gap:8px}
-.nav-btn{padding:7px 14px;font-size:12px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-secondary);cursor:pointer}
+.nav-btn{padding:7px 14px;font-size:13px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-secondary);cursor:pointer}
 .nav-btn.primary{background:var(--accent);border-color:var(--accent);color:white}
 .container{display:flex;height:calc(100vh - 52px);margin-top:52px;position:relative}
 .sidebar-left{width:300px;background:var(--bg-secondary);border-right:1px solid var(--border-color);display:flex;flex-direction:column;transition:all .3s}
@@ -33,7 +33,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .sidebar-header{padding:16px;border-bottom:1px solid var(--border-color)}
 .search-input{width:100%;padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:16px;margin-bottom:12px}
 .filter-tags{display:flex;flex-wrap:wrap;gap:6px}
-.filter-tag{padding:4px 10px;border-radius:4px;margin-right:0;font-size:11px;cursor:pointer;border:1px solid transparent}
+.filter-tag{padding:4px 10px;border-radius:4px;margin-right:0;font-size:13px;cursor:pointer;border:1px solid transparent}
 .filter-tag.active{background:var(--blue);color:white}
 .filter-tag:not(.active){background:var(--bg-tertiary);color:var(--text-secondary)}
 .paper-list{flex:1;overflow-y:auto;padding:8px}
@@ -41,10 +41,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .paper-item{position:relative;padding:12px;border-radius:8px;cursor:pointer;margin-bottom:6px;border:1px solid transparent}
 .paper-item:hover{background:var(--bg-tertiary)}
 .paper-item.active{background:var(--bg-tertiary);border-color:var(--blue)}
-.paper-delete{position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;background:var(--red);color:white;font-size:12px;display:none;align-items:center;justify-content:center;cursor:pointer;line-height:1}
+.paper-delete{position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;background:var(--red);color:white;font-size:13px;display:none;align-items:center;justify-content:center;cursor:pointer;line-height:1}
 .paper-item:hover .paper-delete{display:flex}
 .paper-title{font-size:13px;font-weight:500;margin-bottom:4px;padding-right:20px}
-.paper-meta{font-size:11px;color:var(--blue)}
+.paper-meta{font-size:13px;color:var(--blue)}
 .paper-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
 .ptag{font-size:10px;padding:2px 6px;background:var(--bg-tertiary);border-radius:3px;color:var(--text-secondary)}
 .paper-tags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
@@ -66,7 +66,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 @keyframes spin{to{transform:rotate(360deg)}}
 .analysis-header{margin-bottom:24px}
 .analysis-title{font-size:22px;font-weight:700;margin-bottom:8px}
-.analysis-meta{font-size:12px;color:var(--text-muted)}
+.analysis-meta{font-size:13px;color:var(--text-muted)}
 .analysis-section{background:var(--bg-secondary);border-radius:12px;padding:20px;margin-bottom:16px}
 .section-title{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .section-dot{width:8px;height:8px;border-radius:50%}
@@ -87,22 +87,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .dimension-card.blue .dimension-title{color:var(--blue)}
 .dimension-card.orange .dimension-title{color:var(--orange)}
 .dimension-card.green .dimension-title{color:var(--green)}
-.dimension-content{font-size:12px;color:var(--text-secondary);margin-bottom:12px}
+.dimension-content{font-size:13px;color:var(--text-secondary);margin-bottom:12px}
 .dimension-score{display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1)}
-.score-badge{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600}
+.score-badge{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
 .dimension-card.blue .score-badge{background:var(--blue);color:white}
 .dimension-card.orange .score-badge{background:var(--orange);color:#1a1a1a}
 .dimension-card.green .score-badge{background:var(--green);color:#1a1a1a}
-.score-label{font-size:11px;color:var(--text-muted)}
+.score-label{font-size:13px;color:var(--text-muted)}
 .chat-header{padding:16px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between}
 .chat-tabs{display:flex;gap:4px;overflow-x:auto;padding:4px 16px 4px 0;background:var(--bg-secondary)}
 .chat-tabs::-webkit-scrollbar{height:6px}
 .chat-tabs::-webkit-scrollbar-track{background:var(--bg-secondary)}
 .chat-tabs::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:3px}
-.chat-tab{padding:4px 12px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;margin-right:0 4px 0 0;font-size:12px;color:var(--text-secondary);cursor:pointer;white-space:nowrap;transition:all 0.2s ease}
+.chat-tab{padding:4px 12px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;margin-right:0 4px 0 0;font-size:13px;color:var(--text-secondary);cursor:pointer;white-space:nowrap;transition:all 0.2s ease}
 .chat-tab:hover{background:var(--bg-secondary)}
 .chat-tab.active{background:var(--accent);color:white;border-color:var(--accent)}
-.chat-tab-close{margin-left:6px;font-size:11px;opacity:0.7;padding:2px 4px;border-radius:3px}
+.chat-tab-close{margin-left:6px;font-size:13px;opacity:0.7;padding:2px 4px;border-radius:3px}
 .chat-tab-close:hover{opacity:1;background:rgba(255,255,255,0.2)}
 .chat-tab-add{padding:4px 10px;background:transparent;border:1px dashed var(--border-color);border-radius:4px;margin-right:0 4px 0 0;font-size:13px;color:var(--text-muted);cursor:pointer}
 .chat-tab-add:hover{background:var(--accent);color:white;border-color:var(--accent)}
@@ -125,7 +125,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .modal-close{cursor:pointer;color:var(--text-muted)}
 .modal-body{padding:20px}
 .form-group{margin-bottom:16px}
-.form-label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px}
+.form-label{display:block;font-size:13px;color:var(--text-secondary);margin-bottom:6px}
 .form-input,.form-select,.form-textarea{width:100%;padding:10px 14px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-size:16px}
 .form-textarea{min-height:100px;resize:vertical}
 .form-file{width:100%;padding:20px;background:var(--bg-tertiary);border:2px dashed var(--border-color);border-radius:6px;text-align:center;cursor:pointer}
@@ -138,9 +138,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .tag-input-wrapper{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .tag-input{flex:1;min-width:80px;padding:6px 10px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;margin-right:0;color:var(--text-primary);font-size:16px}
 .tag-input:focus{border-color:var(--accent);outline:none}
-.add-tag-btn{padding:6px 10px;background:var(--accent);border:none;border-radius:4px;margin-right:0;color:white;font-size:11px;cursor:pointer}
+.add-tag-btn{padding:6px 10px;background:var(--accent);border:none;border-radius:4px;margin-right:0;color:white;font-size:13px;cursor:pointer}
 .custom-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
-.custom-tag{display:flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;margin-right:0;font-size:11px;color:var(--text-secondary)}
+.custom-tag{display:flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;margin-right:0;font-size:13px;color:var(--text-secondary)}
 .custom-tag span{cursor:pointer;color:var(--red)}
 .mobile-nav{display:none}
 @media(max-width:1200px){.dimension-cards{grid-template-columns:1fr}}
@@ -166,7 +166,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .mobile-icon{font-size:22px;margin-bottom:2px}
 .main-content{padding-bottom:70px}
 .mode-tabs{padding:8px 12px;overflow-x:auto}
-.mode-tab{padding:6px 14px;font-size:12px;white-space:nowrap}
+.mode-tab{padding:6px 14px;font-size:13px;white-space:nowrap}
 .mobile-menu-btn{display:none;width:32px;height:32px;align-items:center;justify-content:center;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;cursor:pointer;color:var(--text-secondary)}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:40;display:none}
 .overlay.show{display:block}
@@ -190,9 +190,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .process-line.completed{background:var(--green)}
 .process-line.processing{background:var(--orange)}
 .process-label{font-size:10px;color:var(--text-muted);margin-top:2px}
-.one-click-btn{background:var(--accent);color:#fff;border:none;padding:6px 12px;border-radius:4px;margin-right:0;cursor:pointer;font-size:11px;margin-left:8px}
+.process-label.completed{color:var(--green)}
+.one-click-btn{background:var(--accent);color:#fff;border:none;padding:6px 12px;border-radius:4px;margin-right:0;cursor:pointer;font-size:13px;margin-left:8px}
 .one-click-btn:disabled{opacity:0.6;cursor:not-allowed}
-.one-click-btn{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px}
+.one-click-btn{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px}
 .one-click-btn:disabled{opacity:0.6;cursor:not-allowed}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
 
@@ -365,22 +366,22 @@ function importPaper() {
     <div class="process-steps">
         <div class="process-step">
             <span class="process-dot" id="dotParse"></span>
-            <span class="process-label">解析</span>
+            <span class="process-label" id="labelParse">解析</span>
         </div>
         <span class="process-line" id="line1"></span>
         <div class="process-step">
             <span class="process-dot" id="dotTranslate"></span>
-            <span class="process-label">翻译</span>
+            <span class="process-label" id="labelTranslate">翻译</span>
         </div>
         <span class="process-line" id="line2"></span>
         <div class="process-step">
             <span class="process-dot" id="dotAnalysis"></span>
-            <span class="process-label">分析</span>
+            <span class="process-label" id="labelAnalysis">分析</span>
         </div>
         <span class="process-line" id="line3"></span>
         <div class="process-step">
             <span class="process-dot" id="dotReview"></span>
-            <span class="process-label">评审</span>
+            <span class="process-label" id="labelReview">评审</span>
         </div>
     </div>
 </div>
@@ -426,7 +427,7 @@ function importPaper() {
         </select>
         <button class="paper-action2" onclick="doSemanticSearch()">检索</button>
     </div>
-    <p id="searchStats" style="font-size:12px;color:var(--text-muted);margin-bottom:12px"></p>
+    <p id="searchStats" style="font-size:13px;color:var(--text-muted);margin-bottom:12px"></p>
 </div>
 <div id="searchResults" style="padding:0 20px 20px;display:flex;flex-direction:column;gap:12px">
     <p style="color:var(--text-muted);text-align:center;margin-top:40px">输入关键词搜索相关论文</p>
@@ -442,7 +443,7 @@ function importPaper() {
         </select>
     </div>
     <div id="hotTopicsList" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"></div>
-    <p id="hotPapersStats" style="font-size:12px;color:var(--text-muted);margin-bottom:12px"></p>
+    <p id="hotPapersStats" style="font-size:13px;color:var(--text-muted);margin-bottom:12px"></p>
 </div>
 <div id="hotPapersList" style="padding:0 20px 20px;display:flex;flex-direction:column;gap:12px">
     <p style="color:var(--text-muted);text-align:center;margin-top:40px">点击"刷新热点"获取最新论文</p>
@@ -781,6 +782,10 @@ function updateProcessStatus() {
     var dotTranslate = document.getElementById('dotTranslate');
     var dotAnalysis = document.getElementById('dotAnalysis');
     var dotReview = document.getElementById('dotReview');
+    var labelParse = document.getElementById('labelParse');
+    var labelTranslate = document.getElementById('labelTranslate');
+    var labelAnalysis = document.getElementById('labelAnalysis');
+    var labelReview = document.getElementById('labelReview');
     var statusParse = document.getElementById('statusParse');
     var statusTranslate = document.getElementById('statusTranslate');
     var statusAnalysis = document.getElementById('statusAnalysis');
@@ -796,11 +801,13 @@ function updateProcessStatus() {
         statusParse.className = 'process-status-item completed';
         statusParse.textContent = '已完成';
         line1.className = 'process-line completed';
+        if(labelParse) labelParse.className = 'process-label completed';
     } else {
         dotParse.className = 'process-dot';
         statusParse.className = 'process-status-item pending';
         statusParse.textContent = '等待中';
         line1.className = 'process-line';
+        if(labelParse) labelParse.className = 'process-label';
     }
     
     // 翻译状态
@@ -809,6 +816,7 @@ function updateProcessStatus() {
         statusTranslate.className = 'process-status-item completed';
         statusTranslate.textContent = '已完成';
         line2.className = 'process-line completed';
+        if(labelTranslate) labelTranslate.className = 'process-label completed';
     } else if (dotTranslate.classList.contains('processing')) {
         dotTranslate.className = 'process-dot processing';
         statusTranslate.className = 'process-status-item processing';
@@ -818,6 +826,7 @@ function updateProcessStatus() {
         statusTranslate.className = 'process-status-item pending';
         statusTranslate.textContent = '等待中';
         line2.className = 'process-line';
+        if(labelTranslate) labelTranslate.className = 'process-label';
     }
     
     // 分析状态
@@ -826,6 +835,7 @@ function updateProcessStatus() {
         statusAnalysis.className = 'process-status-item completed';
         statusAnalysis.textContent = '已完成';
         line3.className = 'process-line completed';
+        if(labelAnalysis) labelAnalysis.className = 'process-label completed';
     } else if (dotAnalysis.classList.contains('processing')) {
         dotAnalysis.className = 'process-dot processing';
         statusAnalysis.className = 'process-status-item processing';
@@ -835,6 +845,7 @@ function updateProcessStatus() {
         statusAnalysis.className = 'process-status-item pending';
         statusAnalysis.textContent = '等待中';
         line3.className = 'process-line';
+        if(labelAnalysis) labelAnalysis.className = 'process-label';
     }
     
     // 评审状态
@@ -842,12 +853,14 @@ function updateProcessStatus() {
         dotReview.className = 'process-dot completed';
         statusReview.className = 'process-status-item completed';
         statusReview.textContent = '已完成';
+        if(labelReview) labelReview.className = 'process-label completed';
     } else if (dotReview.classList.contains('processing')) {
         dotReview.className = 'process-dot processing';
         statusReview.className = 'process-status-item processing';
         statusReview.textContent = '进行中...';
     } else {
         dotReview.className = 'process-dot';
+        if(labelReview) labelReview.className = 'process-label';
         statusReview.className = 'process-status-item pending';
         statusReview.textContent = '等待中';
     }
@@ -865,8 +878,8 @@ function updateProcessStatus() {
 
 // 一键生成
 async function oneClickGenerate() {
-    if (!currentPaper || !currentPaper.parsed) {
-        alert('请先解析论文');
+    if (!currentPaper || !currentPaper.original) {
+        alert('请先解析论文原文');
         return;
     }
     
@@ -1587,9 +1600,9 @@ function loadHotTopics() {
             if(d.success && d.data) {
                 var html = '';
                 d.data.forEach(function(t) {
-                    html += '<span style="padding:4px 10px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;margin-right:0;font-size:12px;cursor:pointer;opacity:' + (t.enabled ? '1' : '0.5') + '" onclick="toggleHotTopic(' + t.id + ')">' + t.name + '</span>';
+                    html += '<span style="padding:4px 10px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:4px;margin-right:0;font-size:13px;cursor:pointer;opacity:' + (t.enabled ? '1' : '0.5') + '" onclick="toggleHotTopic(' + t.id + ')">' + t.name + '</span>';
                 });
-                html += '<span style="padding:4px 10px;background:var(--accent);color:#fff;border-radius:4px;margin-right:0;font-size:12px;cursor:pointer" onclick="addHotTopic()">+ 添加</span>';
+                html += '<span style="padding:4px 10px;background:var(--accent);color:#fff;border-radius:4px;margin-right:0;font-size:13px;cursor:pointer" onclick="addHotTopic()">+ 添加</span>';
                 document.getElementById('hotTopicsList').innerHTML = html;
             }
         })
@@ -1647,16 +1660,16 @@ function loadHotPapers() {
                     var topics = p.topics ? JSON.parse(p.topics).join(', ') : '';
                     html += '<div style="background:var(--bg-secondary);padding:16px;border-radius:8px">';
                     html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">';
-                    html += '<span style="font-size:12px;color:var(--accent);background:rgba(155,126,217,0.2);padding:2px 8px;border-radius:4px;margin-right:0">' + p.source + '</span>';
-                    html += '<span style="font-size:11px;color:var(--text-muted)">' + p.date + '</span>';
+                    html += '<span style="font-size:13px;color:var(--accent);background:rgba(155,126,217,0.2);padding:2px 8px;border-radius:4px;margin-right:0">' + p.source + '</span>';
+                    html += '<span style="font-size:13px;color:var(--text-muted)">' + p.date + '</span>';
                     html += '</div>';
                     html += '<h3 style="margin:8px 0;font-size:14px;font-weight:600">' + (p.title || '无标题') + '</h3>';
                     if(p.chinese_summary) {
                         html += '<p style="font-size:13px;color:#10b981;margin:8px 0;font-weight:500;background:rgba(16,185,129,0.1);padding:8px;border-radius:4px;margin-right:0;border-left:3px solid #10b981">' + p.chinese_summary + '</p>';
                     }
-                    html += '<p style="font-size:12px;color:var(--text-muted);margin:8px 0">' + (p.authors || '') + '</p>';
-                    if(topics) html += '<p style="font-size:11px;color:var(--accent);margin:8px 0">话题: ' + topics + '</p>';
-                    html += '<p style="font-size:12px;color:var(--text-secondary);margin:8px 0">' + (p.abstract || '') + '</p>';
+                    html += '<p style="font-size:13px;color:var(--text-muted);margin:8px 0">' + (p.authors || '') + '</p>';
+                    if(topics) html += '<p style="font-size:13px;color:var(--accent);margin:8px 0">话题: ' + topics + '</p>';
+                    html += '<p style="font-size:13px;color:var(--text-secondary);margin:8px 0">' + (p.abstract || '') + '</p>';
                     if(p.arxiv_id) {
                         html += '<button style="margin-top:8px;padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:4px;margin-right:0;cursor:pointer;font-size:12px" onclick="importHotPaper(\'' + p.arxiv_id + '\')">导入论文库</button>';
                     }
@@ -1760,8 +1773,8 @@ function doSemanticSearch() {
                 return '<div style="background:var(--bg-secondary);border-radius:8px;padding:16px;cursor:pointer">' +
                     '<div style="font-size:14px;font-weight:600;margin-bottom:8px">'+p.title+'</div>' +
                     chineseSummaryHtml +
-                    '<div style="font-size:12px;color:var(--text-muted)">'+(p.year||'')+' | '+(p.citationCount||0)+' citations'+(sim ? ' | 相似度: '+sim : '')+'</div>' +
-                    '<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">'+(p.abstract||'')+'</div>' +
+                    '<div style="font-size:13px;color:var(--text-muted)">'+(p.year||'')+' | '+(p.citationCount||0)+' citations'+(sim ? ' | 相似度: '+sim : '')+'</div>' +
+                    '<div style="font-size:13px;color:var(--text-secondary);margin-top:8px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical">'+(p.abstract||'')+'</div>' +
                     '<button style="margin-top:8px;padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:4px;margin-right:0;cursor:pointer;font-size:12px" onclick="event.stopPropagation();importSearchPaper(\''+p.paperId+'\',\''+encodeURIComponent(p.title)+'\')">导入论文库</button>' +
                     '</div>';
             }).join('');
