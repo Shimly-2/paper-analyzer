@@ -176,7 +176,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg
 .paper-action2:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(155,126,217,0.5)}
 
 .process-flow{display:flex;align-items:center;gap:16px;padding:8px 16px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color)}
-.process-status{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.process-status{display:flex;align-items:center;gap:8px;margin-bottom:0}
 .process-status-item{font-size:10px;min-width:50px;text-align:center}
 .process-status-item.completed{color:var(--green)}
 .process-status-item.processing{color:var(--orange)}
@@ -383,8 +383,6 @@ function importPaper() {
     </div>
     <button class="one-click-btn" id="oneClickBtn" onclick="oneClickGenerate()">一键生成</button>
 </div>
-
-<button class="mode-tab" onclick="switchMode('analysis')">分析报告</button><button class="mode-tab" onclick="switchMode('peerReview')">同行评审</button><button class="mode-tab" onclick="switchMode('semanticSearch')">语义检索</button><button class="mode-tab" onclick="switchMode('hotPapers')">热点推荐</button></div>
 <div class="main-scroll">
 <div id="readingMode">
 <div class="reading-container">
