@@ -1473,7 +1473,7 @@ function showApiSettings(){
     var url = prompt("请输入 API 服务器地址:", localStorage.getItem("apiUrl") || 'http://192.168.3.24:5001');
     if(url){
         // 测试新API是否能连接
-        fetch(url + '/api/token', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({})})
+        fetch(url + '/api/papers', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({})})
         .then(function(r){return r.json();})
         .then(function(d){
             // 连接成功
