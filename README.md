@@ -78,7 +78,8 @@ wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloud
 chmod +x cloudflared
 
 # 启动 tunnel
-cloudflared tunnel --url http://localhost:5001
+sudo cloudflared service uninstall
+sudo cloudflared service install eyJhIjoiMzRiZWRlYmQzZDY5YjQzNDE3MTllMDdmZGU1NmUwYTQiLCJ0IjoiNjJlOGJiMDMtNTZhMC00MWQ2LTg1MDItZjFkNGZlMzdlNTgwIiwicyI6IlpEQmlPV013TVRndFl6STROUzAwTTJNeExXRmxNbVF0WkRJNU9HSmpNVEkzTVRKaSJ9
 
 # 获得公开 URL，格式如：
 # https://xxxx.trycloudflare.com

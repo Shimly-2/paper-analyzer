@@ -956,6 +956,14 @@ function parsePaper() {
     btn.innerHTML = '<span class="loading"></span> 解析中...';
     document.getElementById('originalContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在解析论文，请稍候...</p>';
     
+    // 更新流程状态
+    var dotParse = document.getElementById('dotParse');
+    var statusParse = document.getElementById('statusParse');
+    var line1 = document.getElementById('line1');
+    if (dotParse) dotParse.classList.add('processing');
+    if (statusParse) statusParse.textContent = '进行中...';
+    if (line1) line1.className = 'process-line processing';
+    
     var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001').replace(/\/$/, '');
     
     // Check if it's a PDF file
@@ -1089,6 +1097,14 @@ function translatePaper() {
     var btn = document.getElementById('translateBtn');
     btn.innerHTML = '<span class="loading"></span> 翻译中...';
     document.getElementById('translatedContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在翻译论文，请稍候...</p>';
+    
+    // 更新流程状态
+    var dotTranslate = document.getElementById('dotTranslate');
+    var statusTranslate = document.getElementById('statusTranslate');
+    var line2 = document.getElementById('line2');
+    if (dotTranslate) dotTranslate.classList.add('processing');
+    if (statusTranslate) statusTranslate.textContent = '进行中...';
+    if (line2) line2.className = 'process-line processing';
     
     var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001').replace(/\/$/, '');
     // Fallback URLs
@@ -1581,6 +1597,12 @@ function generatePeerReview() {
     btn.disabled = true;
     document.getElementById('peerReviewContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在生成同行评审，请稍候...</p>';
     
+    // 更新流程状态
+    var dotReview = document.getElementById('dotReview');
+    var statusReview = document.getElementById('statusReview');
+    if (dotReview) dotReview.classList.add('processing');
+    if (statusReview) statusReview.textContent = '进行中...';
+    
     var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001').replace(/\/$/, '');
     
     // First get peer review - 截断内容以避免上下文溢出
@@ -1900,6 +1922,14 @@ function generateAnalysis() {
     btn.innerHTML = '<span class="loading"></span> 分析中...';
     btn.disabled = true;
     document.getElementById('analysisContent').innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:40px">正在生成分析报告，请稍候...</p>';
+    
+    // 更新流程状态
+    var dotAnalysis = document.getElementById('dotAnalysis');
+    var statusAnalysis = document.getElementById('statusAnalysis');
+    var line3 = document.getElementById('line3');
+    if (dotAnalysis) dotAnalysis.classList.add('processing');
+    if (statusAnalysis) statusAnalysis.textContent = '进行中...';
+    if (line3) line3.className = 'process-line processing';
     
     var apiUrl = (localStorage.getItem('apiUrl') || 'http://192.168.3.24:5001').replace(/\/$/, '');
     // Fallback URLs
