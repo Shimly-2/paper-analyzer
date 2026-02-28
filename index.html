@@ -868,7 +868,7 @@ function updateProcessStatus() {
     
     // 更新一键生成按钮状态
     if (btn) {
-        btn.disabled = !currentPaper.parsed || (currentPaper.translated && currentPaper.analysis && currentPaper.peerReview);
+        btn.disabled = !currentPaper.original || (currentPaper.translated && currentPaper.analysis && currentPaper.peerReview);
         if (currentPaper.translated && currentPaper.analysis && currentPaper.peerReview) {
             btn.textContent = '全部完成';
         } else {
@@ -998,6 +998,39 @@ function parsePaper() {
                         renderKaTeX();
                         document.getElementById('analysisTitle').innerHTML = currentPaper.title;
                         updateProcessStatus();
+                        // 解析完成后自动进行翻译、分析、评审
+                        setTimeout(function() {
+                            // 翻译
+                            if (!currentPaper.translated) {
+                                dotTranslate.classList.add('processing');
+                                statusTranslate.textContent = '进行中...';
+                                if (line2) line2.className = 'process-line processing';
+                                var translateBtn = document.getElementById('translateBtn');
+                                translateBtn.click();
+                            }
+                            
+                            setTimeout(function() {
+                                // 分析
+                                if (!currentPaper.analysis) {
+                                    dotAnalysis.classList.add('processing');
+                                    statusAnalysis.textContent = '进行中...';
+                                    if (line3) line3.className = 'process-line processing';
+                                    var analyzeBtn = document.getElementById('analyzeBtn');
+                                    analyzeBtn.click();
+                                }
+                                
+                                setTimeout(function() {
+                                    // 评审
+                                    if (!currentPaper.peerReview) {
+                                        dotReview.classList.add('processing');
+                                        statusReview.textContent = '进行中...';
+                                        var peerReviewBtn = document.getElementById('peerReviewBtn');
+                                        peerReviewBtn.click();
+                                    }
+                                }, 2000);
+                            }, 2000);
+                        }, 500);
+
                     } else {
                         alert('格式转换失败: ' + (d2.error || '未知错误'));
                     }
@@ -1053,6 +1086,39 @@ function parsePaper() {
                     renderKaTeX();
                     document.getElementById('analysisTitle').innerHTML = currentPaper.title;
                     updateProcessStatus();
+                        // 解析完成后自动进行翻译、分析、评审
+                        setTimeout(function() {
+                            // 翻译
+                            if (!currentPaper.translated) {
+                                dotTranslate.classList.add('processing');
+                                statusTranslate.textContent = '进行中...';
+                                if (line2) line2.className = 'process-line processing';
+                                var translateBtn = document.getElementById('translateBtn');
+                                translateBtn.click();
+                            }
+                            
+                            setTimeout(function() {
+                                // 分析
+                                if (!currentPaper.analysis) {
+                                    dotAnalysis.classList.add('processing');
+                                    statusAnalysis.textContent = '进行中...';
+                                    if (line3) line3.className = 'process-line processing';
+                                    var analyzeBtn = document.getElementById('analyzeBtn');
+                                    analyzeBtn.click();
+                                }
+                                
+                                setTimeout(function() {
+                                    // 评审
+                                    if (!currentPaper.peerReview) {
+                                        dotReview.classList.add('processing');
+                                        statusReview.textContent = '进行中...';
+                                        var peerReviewBtn = document.getElementById('peerReviewBtn');
+                                        peerReviewBtn.click();
+                                    }
+                                }, 2000);
+                            }, 2000);
+                        }, 500);
+
                 } else {
                     alert('格式转换失败: ' + (d.error || '未知错误'));
                     document.getElementById('originalContent').innerHTML = '<p style="color:var(--text-muted)">格式转换失败</p>';
