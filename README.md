@@ -39,6 +39,7 @@ pip install -r requirements.txt
 ### 前端（GitHub Pages）
 
 ```bash
+python3 -m http.server 8080
 # 推送后自动部署到 GitHub Pages
 # URL: https://shimly-2.github.io/paper-analyzer/
 ```
@@ -78,6 +79,7 @@ wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloud
 chmod +x cloudflared
 
 # 启动 tunnel
+# https://dash.cloudflare.com/34bedebd3d69b4341719e07fde56e0a4/tunnels/62e8bb03-56a0-41d6-8502-f1d4fe37e580/overview
 sudo cloudflared service uninstall
 sudo cloudflared service install eyJhIjoiMzRiZWRlYmQzZDY5YjQzNDE3MTllMDdmZGU1NmUwYTQiLCJ0IjoiNjJlOGJiMDMtNTZhMC00MWQ2LTg1MDItZjFkNGZlMzdlNTgwIiwicyI6IlpEQmlPV013TVRndFl6STROUzAwTTJNeExXRmxNbVF0WkRJNU9HSmpNVEkzTVRKaSJ9
 
