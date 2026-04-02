@@ -40,7 +40,7 @@ def save_token(token: str) -> bool:
     except Exception:
         return False
 
-def parse_url(pdf_url: str, token: Optional[str] = None, output_dir: Optional[str] = None) -> Dict[str, Any]:
+def parse_url(pdf_url: str, token: Optional[str] = None, output_dir: Optional[str] = None, output_id: Optional[str] = None) -> Dict[str, Any]:
     """
     解析远程 PDF URL
     
@@ -48,6 +48,7 @@ def parse_url(pdf_url: str, token: Optional[str] = None, output_dir: Optional[st
         pdf_url: PDF 文件 URL
         token: MinerU API Token
         output_dir: 输出目录
+        output_id: 输出唯一标识
     
     Returns:
         解析结果字典，包含 markdown 内容
@@ -88,7 +89,7 @@ def parse_url(pdf_url: str, token: Optional[str] = None, output_dir: Optional[st
         task_id = result["data"]["task_id"]
         
         # Step 2: 轮询等待结果
-        for i in range(60):
+        for i in range(120):  # 增加超时时间到360秒
             time.sleep(3)
             result_response = requests.get(
                 f"{MINERU_RESULT_API}/{task_id}",
@@ -121,7 +122,7 @@ def parse_url(pdf_url: str, token: Optional[str] = None, output_dir: Optional[st
                             
                             # 提取 images 文件夹
                             images_dir = None
-                            if output_dir:
+                            if output_dir and output_id:
                                 os.makedirs(output_dir, exist_ok=True)
                                 images_dir = os.path.join(output_dir, f'images_{output_id}')
                                 if os.path.exists(images_dir):
@@ -409,7 +410,7 @@ def parse_local_file(file_path: str, token: Optional[str] = None, output_dir: Op
         return {"success": False, "error": f"错误: {str(e)}"}
 
 
-def parse_arxiv(arxiv_id: str, token: Optional[str] = None, output_dir: Optional[str] = None) -> Dict[str, Any]:
+def parse_arxiv(arxiv_id: str, token: Optional[str] = None, output_dir: Optional[str] = None, output_id: Optional[str] = None) -> Dict[str, Any]:
     """
     解析 arXiv 论文
     
@@ -417,12 +418,13 @@ def parse_arxiv(arxiv_id: str, token: Optional[str] = None, output_dir: Optional
         arxiv_id: arXiv ID (如 2602.03219)
         token: MinerU API Token
         output_dir: 输出目录
+        output_id: 输出唯一标识
     
     Returns:
         解析结果字典
     """
     pdf_url = f"https://arxiv.org/pdf/{arxiv_id}.pdf"
-    return parse_url(pdf_url, token, output_dir)
+    return parse_url(pdf_url, token, output_dir, output_id)
 
 # CLI 入口
 if __name__ == "__main__":
@@ -456,10 +458,10 @@ if __name__ == "__main__":
         result = parse_local_file(args.file, output_dir=args.output)
     elif args.arxiv:
         print(f"正在解析 arXiv: {args.arxiv} ...")
-        result = parse_arxiv(args.arxiv, output_dir=args.output)
+        result = parse_arxiv(args.arxiv, output_dir=args.output, output_id=output_id)
     elif args.url:
         print(f"正在解析 URL: {args.url} ...")
-        result = parse_url(args.url, output_dir=args.output)
+        result = parse_url(args.url, output_dir=args.output, output_id=output_id)
     else:
         token = get_token()
         if token:

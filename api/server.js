@@ -174,7 +174,7 @@ function fetchDailyPapers(maxResults) {
 
 
 function getArxivInfo(arxivId, callback) {
-    https.get('https://export.arxiv.org/api/query?id_list='+arxivId, (res) => {
+    const req = https.get('https://export.arxiv.org/api/query?id_list='+arxivId, (res) => {
         let data = '';
         res.on('data', c => data += c);
         res.on('end', () => {
@@ -185,7 +185,8 @@ function getArxivInfo(arxivId, callback) {
             const abstract = abstracts && abstracts[0] ? abstracts[0].replace(/<\/?summary>/g, '').trim().replace(/\s+/g, ' ') : '';
             callback({ title, abstract });
         });
-    }).on('error', () => callback({ title:'', abstract:'' }));
+    });
+    req.on('error', () => callback({ title:'', abstract:'' }));
 }
 
 function callMiniMax(prompt, systemPrompt, callback) {
@@ -212,7 +213,7 @@ function callMiniMax(prompt, systemPrompt, callback) {
         }
     };
     
-    const req = http.request(options, (res) => {
+    const req = https.request(options, (res) => {
         let data = '';
         res.on('data', c => data += c);
         res.on('end', () => {
@@ -221,12 +222,19 @@ function callMiniMax(prompt, systemPrompt, callback) {
                 if (json.choices && json.choices[0]) {
                     callback({success:true, text: json.choices[0].message.content});
                 } else {
+                    console.error('MiniMax API error response:', JSON.stringify(json));
                     callback({error: JSON.stringify(json)});
                 }
-            } catch(e) { callback({error: e.message}); }
+            } catch(e) { 
+                console.error('MiniMax response parse error:', e.message, 'Data:', data.substring(0, 500));
+                callback({error: e.message}); 
+            }
         });
     });
-    req.on('error', e => callback({error: e.message}));
+    req.on('error', e => {
+        console.error('MiniMax request error:', e.message);
+        callback({error: e.message});
+    });
     req.write(postData);
     req.end();
 }
@@ -584,9 +592,12 @@ const server = http.createServer((req, res) => {
                 const { markdown, title, uuid } = JSON.parse(body);
                 if (!markdown) { res.writeHead(200, {'Content-Type':'application/json'}); res.end(JSON.stringify({success:false, error:'no markdown'})); return; }
                 
+                // 移除 <think>...</think> 思考过程，避免MiniMax将其当作对话
+                const cleanMarkdown = markdown.replace(/<think>[\s\S]*?<\/think>/g, '');
+                
                 // 截断 markdown 以避免上下文溢出
                 const maxLength = 196608;
-                const truncatedMarkdown = markdown.length > maxLength ? markdown.substring(0, maxLength) : markdown;
+                const truncatedMarkdown = cleanMarkdown.length > maxLength ? cleanMarkdown.substring(0, maxLength) : cleanMarkdown;
                 
                 const prompt = `请将以下学术论文的Markdown内容转换为完整HTML格式。
 
